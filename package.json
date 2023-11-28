@@ -10,6 +10,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "firebase": "^10.7.0",
     "vue": "^3.3.4",
     "vue-router": "^4.2.5"
   },
@@ -19,6 +20,7 @@
     "@vue/eslint-config-prettier": "^8.0.0",
     "eslint": "^8.49.0",
     "eslint-plugin-vue": "^9.17.0",
+    "firebase-tools": "^12.9.1",
     "prettier": "^3.0.3",
     "vite": "^4.4.11"
   }
