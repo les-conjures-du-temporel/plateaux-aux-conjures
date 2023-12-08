@@ -1,0 +1,3 @@
+GET https://boardgamegeek.com/xmlapi2/collection?username=lesconjures&brief=1
+
+>>! bgg-collection.xml

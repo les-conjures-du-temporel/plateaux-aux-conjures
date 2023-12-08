@@ -1,6 +1,23 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
 import HelloWorld from './components/HelloWorld.vue'
+import { listGameIdsInUserCollection } from '@/board_game_geek'
+import { ref } from 'vue'
+
+const isSyncingDatabaseData = ref(false)
+
+function syncDatabaseData() {
+  if (isSyncingDatabaseData.value) {
+    return
+  }
+
+  isSyncingDatabaseData.value = true
+
+  listGameIdsInUserCollection('lesconjures', console.log).then(gameIds => {
+    console.log(gameIds)
+    isSyncingDatabaseData.value = false
+  })
+}
 </script>
 
 <template>
@@ -11,7 +28,7 @@ import HelloWorld from './components/HelloWorld.vue'
       <HelloWorld msg="You did it!" />
 
       <p>
-        <el-button>I'm a button</el-button>
+        <el-button @click="syncDatabaseData" :loading="isSyncingDatabaseData">Sync database data</el-button>
       </p>
 
       <nav>
