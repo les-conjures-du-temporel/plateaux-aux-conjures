@@ -1,7 +1,7 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
 import HelloWorld from './components/HelloWorld.vue'
-import { listGameIdsInUserCollection } from '@/board_game_geek'
+import { listGameIdsInUserCollection, getGamesInBatches } from '@/board_game_geek'
 import { ref } from 'vue'
 
 const isSyncingDatabaseData = ref(false)
@@ -13,10 +13,17 @@ function syncDatabaseData() {
 
   isSyncingDatabaseData.value = true
 
-  listGameIdsInUserCollection('lesconjures', console.log).then((gameIds) => {
-    console.log(gameIds)
-    isSyncingDatabaseData.value = false
-  })
+  listGameIdsInUserCollection('sitegui', console.log)
+    .then((gameIds) => {
+      console.log(gameIds)
+
+      return getGamesInBatches(gameIds)
+    })
+    .then((games) => {
+      console.log(games)
+
+      isSyncingDatabaseData.value = false
+    })
 }
 </script>
 
