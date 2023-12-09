@@ -1,3 +1,5 @@
+import type { ProgressCallback } from '@/resync_collection'
+
 const BASE_URL = 'https://www.boardgamegeek.com/xmlapi2'
 const REQUEST_TIMEOUT = 10e3
 const EXPORT_COLLECTION_QUEUE_TIMEOUT = 120e3
@@ -5,10 +7,14 @@ const EXPORT_COLLECTION_QUEUE_SLEEP = 2e3
 const GET_GAMES_BATCH_SIZE = 10
 const GET_GAMES_BATCH_SLEEP = 2e3
 
-interface Game {
+/**
+ * Represents a board game retrieved from BoardGameGeek API.
+ */
+export interface BggGame {
   id: string
   thumbnail: string | null
   primaryName: string
+  // Note that sometimes the French name is stored in BGG in this secondary list
   secondaryNames: string[]
   minPlayers: number | null
   maxPlayers: number | null
@@ -23,17 +29,12 @@ interface Game {
   averageWeight: number | null
 }
 
-interface Progress {
-  message: string
-  level: 'info' | 'warn'
-}
-
 export async function listGameIdsInUserCollection(
   username: string,
-  progressCallback: (message: Progress) => void
+  progressCallback: ProgressCallback
 ): Promise<string[]> {
   const encodedUsername = encodeURIComponent(username)
-  const apiUrl = `${BASE_URL}/collection?username=${encodedUsername}&brief=1&excludesubtype=boardgame`
+  const apiUrl = `${BASE_URL}/collection?username=${encodedUsername}&brief=1&excludesubtype=boardgameexpansion`
   const start = Date.now()
 
   let response = null
@@ -93,8 +94,8 @@ async function fetchWithTimeout(url: string, time: number): Promise<Response> {
 
 export async function getGamesInBatches(
   ids: string[],
-  progressCallback: (message: Progress) => void
-): Promise<Game[]> {
+  progressCallback: ProgressCallback
+): Promise<BggGame[]> {
   const games = []
   for (let i = 0; i < ids.length; i += GET_GAMES_BATCH_SIZE) {
     const subIds = ids.slice(i, i + GET_GAMES_BATCH_SIZE)
@@ -119,11 +120,8 @@ export async function getGamesInBatches(
   return games
 }
 
-async function getGames(
-  ids: string[],
-  progressCallback: (message: Progress) => void
-): Promise<Game[]> {
-  const games: Game[] = []
+async function getGames(ids: string[], progressCallback: ProgressCallback): Promise<BggGame[]> {
+  const games: BggGame[] = []
 
   const idsParam = encodeURIComponent(ids.join(','))
   const apiUrl = `${BASE_URL}/things?id=${idsParam}&stats=1`
@@ -153,7 +151,7 @@ async function getGames(
   return games
 }
 
-function parseGameElement(gameEl: Element): Game | null {
+function parseGameElement(gameEl: Element): BggGame | null {
   function extractString(text: string | undefined | null): string | null {
     if (!text) {
       return null

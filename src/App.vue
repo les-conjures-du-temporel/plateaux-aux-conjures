@@ -1,8 +1,11 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
 import HelloWorld from './components/HelloWorld.vue'
-import { listGameIdsInUserCollection, getGamesInBatches } from '@/board_game_geek'
 import { ref } from 'vue'
+import { resyncCollection } from '@/resync_collection'
+import { Database } from '@/database'
+
+const db = new Database()
 
 const isSyncingDatabaseData = ref(false)
 
@@ -13,15 +16,11 @@ function syncDatabaseData() {
 
   isSyncingDatabaseData.value = true
 
-  listGameIdsInUserCollection('sitegui', console.log)
-    .then((gameIds) => {
-      console.log(gameIds)
-
-      return getGamesInBatches(gameIds, console.log)
+  resyncCollection(db, console.log)
+    .catch((error) => {
+      console.error(error)
     })
-    .then((games) => {
-      console.log(games)
-
+    .finally(() => {
       isSyncingDatabaseData.value = false
     })
 }
@@ -36,8 +35,8 @@ function syncDatabaseData() {
 
       <p>
         <el-button @click="syncDatabaseData" :loading="isSyncingDatabaseData"
-          >Sync database data</el-button
-        >
+          >Sync database data
+        </el-button>
       </p>
 
       <nav>
