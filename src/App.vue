@@ -13,7 +13,7 @@ function syncDatabaseData() {
 
   isSyncingDatabaseData.value = true
 
-  listGameIdsInUserCollection('lesconjures', console.log).then(gameIds => {
+  listGameIdsInUserCollection('lesconjures', console.log).then((gameIds) => {
     console.log(gameIds)
     isSyncingDatabaseData.value = false
   })
@@ -28,7 +28,9 @@ function syncDatabaseData() {
       <HelloWorld msg="You did it!" />
 
       <p>
-        <el-button @click="syncDatabaseData" :loading="isSyncingDatabaseData">Sync database data</el-button>
+        <el-button @click="syncDatabaseData" :loading="isSyncingDatabaseData"
+          >Sync database data</el-button
+        >
       </p>
 
       <nav>
