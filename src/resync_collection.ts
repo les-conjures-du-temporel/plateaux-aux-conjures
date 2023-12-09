@@ -28,7 +28,7 @@ export async function resyncCollection(db: Database, progressCallback: ProgressC
 
   // Detect what to do with each game
   const gamesToAdd: Game[] = []
-  const gamesToUpdate: Map<string, any> = new Map()
+  const gamesToUpdate = new Map()
   for (const id of allBggIds) {
     const bggGame = bggGames.get(id)
     if (!bggGame) {
@@ -40,19 +40,14 @@ export async function resyncCollection(db: Database, progressCallback: ProgressC
     if (!staleGame) {
       gamesToAdd.push({
         bgg: bggGame,
+        ownedByClub: true,
         clubCode: generateClubCode(),
         lastPlayed: null,
         name: bggGame.primaryName,
         totalPlays: 0
       })
     } else {
-      const updates: any = { bgg: bggGame }
-
-      if (novelGameIds.has(id) && !staleGame.clubCode) {
-        updates.clubCode = generateClubCode()
-      }
-
-      gamesToUpdate.set(id, updates)
+      gamesToUpdate.set(id, { bgg: bggGame, ownedByClub: novelGameIds.has(id) })
     }
   }
 
@@ -69,7 +64,7 @@ export async function resyncCollection(db: Database, progressCallback: ProgressC
 function generateClubCode(): string {
   const base32Characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
   let result = ''
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 3; i++) {
     const index = Math.floor(Math.random() * base32Characters.length)
     result += base32Characters[index]
   }

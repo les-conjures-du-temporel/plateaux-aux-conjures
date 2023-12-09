@@ -10,8 +10,9 @@ export interface Game {
   // it may be different because of locality
   name: string
   bgg: BggGame
-  // If the club has this game, the code used to log a play
-  clubCode: string | null
+  ownedByClub: boolean
+  // The code used to log a play
+  clubCode: string
   lastPlayed: Date | null
   totalPlays: number
 }
