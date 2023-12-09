@@ -17,7 +17,7 @@ function syncDatabaseData() {
     .then((gameIds) => {
       console.log(gameIds)
 
-      return getGamesInBatches(gameIds)
+      return getGamesInBatches(gameIds, console.log)
     })
     .then((games) => {
       console.log(games)

@@ -23,11 +23,17 @@ interface Game {
   averageWeight: number | null
 }
 
+interface Progress {
+  message: string
+  level: 'info' | 'warn'
+}
+
 export async function listGameIdsInUserCollection(
   username: string,
-  progressCallback: (message: string) => void
+  progressCallback: (message: Progress) => void
 ): Promise<string[]> {
-  const apiUrl = `${BASE_URL}/collection?username=${encodeURIComponent(username)}&brief=1`
+  const encodedUsername = encodeURIComponent(username)
+  const apiUrl = `${BASE_URL}/collection?username=${encodedUsername}&brief=1&excludesubtype=boardgame`
   const start = Date.now()
 
   let response = null
@@ -37,7 +43,7 @@ export async function listGameIdsInUserCollection(
       break
     }
 
-    progressCallback('BGG has queued request for user collection')
+    progressCallback({ message: 'BGG has queued request for user collection', level: 'info' })
     await sleep(EXPORT_COLLECTION_QUEUE_SLEEP)
   }
 
@@ -59,6 +65,10 @@ export async function listGameIdsInUserCollection(
     }
   }
 
+  progressCallback({
+    message: `Listed ${gamesIds.length} board games from collection`,
+    level: 'info'
+  })
   return gamesIds
 }
 
@@ -81,18 +91,38 @@ async function fetchWithTimeout(url: string, time: number): Promise<Response> {
   return response
 }
 
-// TODO: progress messages and error logs
-export async function getGamesInBatches(ids: string[]): Promise<Game[]> {
+export async function getGamesInBatches(
+  ids: string[],
+  progressCallback: (message: Progress) => void
+): Promise<Game[]> {
   const games = []
   for (let i = 0; i < ids.length; i += GET_GAMES_BATCH_SIZE) {
     const subIds = ids.slice(i, i + GET_GAMES_BATCH_SIZE)
-    games.push(...(await getGames(subIds)))
+
+    progressCallback({
+      message: `Will request ${subIds.length} more board games from BGG`,
+      level: 'info'
+    })
+    let newGames
+    try {
+      newGames = await getGames(subIds, progressCallback)
+    } catch (error) {
+      progressCallback({ message: `Failed with ${error}. Will retry`, level: 'warn' })
+      await sleep(GET_GAMES_BATCH_SLEEP)
+      newGames = await getGames(subIds, progressCallback)
+    }
+    games.push(...newGames)
     await sleep(GET_GAMES_BATCH_SLEEP)
   }
+
+  progressCallback({ message: `Successfully extracted ${games.length} board games`, level: 'info' })
   return games
 }
 
-async function getGames(ids: string[]): Promise<Game[]> {
+async function getGames(
+  ids: string[],
+  progressCallback: (message: Progress) => void
+): Promise<Game[]> {
   const games: Game[] = []
 
   const idsParam = encodeURIComponent(ids.join(','))
@@ -107,14 +137,31 @@ async function getGames(ids: string[]): Promise<Game[]> {
   const parser = new DOMParser()
   const xmlDoc = parser.parseFromString(data, 'text/xml')
 
-  const extractString = (text: string | undefined | null): string | null => {
+  for (const gameEl of Array.from(xmlDoc.getElementsByTagName('item'))) {
+    const game = parseGameElement(gameEl)
+    if (game) {
+      games.push(game)
+    }
+  }
+
+  for (const id of ids) {
+    if (!games.some((game) => game.id === id)) {
+      progressCallback({ message: `Failed to extract data for board game ${id}`, level: 'warn' })
+    }
+  }
+
+  return games
+}
+
+function parseGameElement(gameEl: Element): Game | null {
+  function extractString(text: string | undefined | null): string | null {
     if (!text) {
       return null
     }
     return text.trim() || null
   }
 
-  const extractNumber = (element): number | null => {
+  function extractNumber(element: Element | null): number | null {
     const text = extractString(element?.getAttribute('value'))
     if (!text) {
       return null
@@ -126,7 +173,7 @@ async function getGames(ids: string[]): Promise<Game[]> {
     }
   }
 
-  const extractStrings = (elements): string[] => {
+  function extractStrings(elements: NodeListOf<Element>): string[] {
     const result = []
     for (const element of Array.from(elements)) {
       const text = extractString(element.getAttribute('value'))
@@ -137,34 +184,29 @@ async function getGames(ids: string[]): Promise<Game[]> {
     return result
   }
 
-  for (const gameEl of Array.from(xmlDoc.getElementsByTagName('item'))) {
-    const gameId = gameEl.getAttribute('id')
-    if (!gameId) {
-      continue
-    }
-
-    const game: Game = {
-      id: gameId,
-      thumbnail: extractString(gameEl.querySelector('thumbnail')?.textContent),
-      primaryName:
-        extractString(gameEl.querySelector('name[type="primary"]')?.getAttribute('value')) ||
-        '(failed to extract name)',
-      secondaryNames: extractStrings(gameEl.querySelectorAll('name[type="alternate"]')),
-      minPlayers: extractNumber(gameEl.querySelector('minplayers')),
-      maxPlayers: extractNumber(gameEl.querySelector('maxplayers')),
-      minPlayTimeMinutes: extractNumber(gameEl.querySelector('minplaytime')),
-      maxPlayTimeMinutes: extractNumber(gameEl.querySelector('maxplaytime')),
-      minAge: extractNumber(gameEl.querySelector('minage')),
-      categories: extractStrings(gameEl.querySelectorAll('link[type="boardgamecategory"]')),
-      mechanics: extractStrings(gameEl.querySelectorAll('link[type="boardgamemechanic"]')),
-      designers: extractStrings(gameEl.querySelectorAll('link[type="boardgamedesigner"]')),
-      artists: extractStrings(gameEl.querySelectorAll('link[type="boardgameartist"]')),
-      averageRating: extractNumber(gameEl.querySelector('statistics > ratings > average')),
-      averageWeight: extractNumber(gameEl.querySelector('statistics > ratings > averageweight'))
-    }
-
-    games.push(game)
+  const gameId = gameEl.getAttribute('id')
+  if (!gameId) {
+    return null
   }
+  const primaryName = extractString(
+    gameEl.querySelector('name[type="primary"]')?.getAttribute('value')
+  )
 
-  return games
+  return {
+    id: gameId,
+    thumbnail: extractString(gameEl.querySelector('thumbnail')?.textContent),
+    primaryName: primaryName || '(failed to extract name)',
+    secondaryNames: extractStrings(gameEl.querySelectorAll('name[type="alternate"]')),
+    minPlayers: extractNumber(gameEl.querySelector('minplayers')),
+    maxPlayers: extractNumber(gameEl.querySelector('maxplayers')),
+    minPlayTimeMinutes: extractNumber(gameEl.querySelector('minplaytime')),
+    maxPlayTimeMinutes: extractNumber(gameEl.querySelector('maxplaytime')),
+    minAge: extractNumber(gameEl.querySelector('minage')),
+    categories: extractStrings(gameEl.querySelectorAll('link[type="boardgamecategory"]')),
+    mechanics: extractStrings(gameEl.querySelectorAll('link[type="boardgamemechanic"]')),
+    designers: extractStrings(gameEl.querySelectorAll('link[type="boardgamedesigner"]')),
+    artists: extractStrings(gameEl.querySelectorAll('link[type="boardgameartist"]')),
+    averageRating: extractNumber(gameEl.querySelector('statistics > ratings > average')),
+    averageWeight: extractNumber(gameEl.querySelector('statistics > ratings > averageweight'))
+  }
 }
