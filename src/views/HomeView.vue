@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, inject, type Ref } from 'vue'
 import type { Database, Game } from '@/database'
+import GameItem from '@/components/GameItem.vue'
 
 const db: Database = inject('db')!
 
@@ -28,22 +29,7 @@ db.getGamesWithCache()
 
   <el-alert :title="String(loadError)" type="error" v-if="loadError" />
 
-  <el-descriptions v-for="game in games" :key="game.bgg.id" :title="game.name" border>
-    <el-descriptions-item>
-      <el-image style="width: 100px; height: 100px" :src="game.bgg.thumbnail" />
-    </el-descriptions-item>
-    <el-descriptions-item label="Players"
-      >{{ game.bgg.minPlayers }} - {{ game.bgg.maxPlayers }}</el-descriptions-item
-    >
-    <el-descriptions-item label="Play time"
-      >{{ game.bgg.minPlayTimeMinutes }} - {{ game.bgg.maxPlayTimeMinutes }}</el-descriptions-item
-    >
-    <el-descriptions-item label="Min age">
-      {{ game.bgg.minAge }}
-    </el-descriptions-item>
-    <el-descriptions-item label="Average rating">{{ game.bgg.averageRating }}</el-descriptions-item>
-    <el-descriptions-item label="Average weight">{{ game.bgg.averageWeight }}</el-descriptions-item>
-  </el-descriptions>
+  <game-item v-for="game in games" :key="game.bgg.id" :game="game" />
 </template>
 
 <style scoped>

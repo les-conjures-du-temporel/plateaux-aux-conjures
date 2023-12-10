@@ -1,4 +1,22 @@
-html, body {
-    margin: 0;
-    padding: 0;
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #eee;
+
+  --el-color-primary: #26294e;
+  --el-menu-active-color: #26294e;
 }
+
+/**
+main colors:
+#6ebeb1
+#26294e
+
+gentler colors:
+#b9dfd9
+#8488c2
+
+accent color:
+#ca5843
+ */

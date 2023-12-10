@@ -15,9 +15,7 @@ import { RouterView } from 'vue-router'
       <el-main>
         <RouterView />
       </el-main>
-      <el-footer class="footer">
-        &copy; 2023 les conjurés du temporel
-      </el-footer>
+      <el-footer class="footer"> &copy; 2023 les conjurés du temporel </el-footer>
     </el-container>
   </div>
 </template>
