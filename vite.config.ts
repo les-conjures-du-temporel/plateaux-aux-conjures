@@ -2,20 +2,19 @@ import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import AutoImport from 'unplugin-auto-import/vite'
-import Components from 'unplugin-vue-components/vite'
-import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
+import { quasar, transformAssetUrls } from '@quasar/vite-plugin'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    vue(),
-    AutoImport({
-      resolvers: [ElementPlusResolver()],
+    vue({
+      template: { transformAssetUrls }
     }),
-    Components({
-      resolvers: [ElementPlusResolver()],
-    }),
+    // @quasar/plugin-vite options list:
+    // https://github.com/quasarframework/quasar/blob/dev/vite-plugin/index.d.ts
+    quasar({
+      sassVariables: 'src/quasar-variables.sass'
+    })
   ],
   resolve: {
     alias: {

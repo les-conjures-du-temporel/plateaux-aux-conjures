@@ -1,13 +1,4 @@
-html,
-body {
-  margin: 0;
-  padding: 0;
-  background-color: #eee;
 
-  --el-color-primary: #26294e;
-  --el-menu-active-color: #26294e;
-  --el-mask-color: transparent;
-}
 
 /**
 main colors:

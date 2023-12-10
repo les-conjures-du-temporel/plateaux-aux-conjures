@@ -1,47 +1,52 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
+import { ref } from 'vue'
+
+const leftDrawerOpen = ref(false)
+
+function toggleLeftDrawer() {
+  leftDrawerOpen.value = !leftDrawerOpen.value
+}
 </script>
 
 <template>
-  <div class="common-layout">
-    <el-container>
-      <el-header class="header">
-        <el-menu
-          default-active="home"
-          mode="horizontal"
-          menu-trigger="click"
-          router
-        >
-          <el-sub-menu index="1">
-            <template #title>Plateaux aux conjurés</template>
-            <el-menu-item index="home" :route="{name: 'home'}">Jeux du moment</el-menu-item>
-            <el-menu-item index="about" :route="{name: 'about'}">A propos</el-menu-item>
-          </el-sub-menu>
-        </el-menu>
-      </el-header>
-      <el-main>
-        <RouterView />
-      </el-main>
-      <el-footer class="footer"> &copy; 2023 les conjurés du temporel</el-footer>
-    </el-container>
-  </div>
+  <q-layout view="hHh Lpr fff">
+    <q-header class="bg-primary text-white" height-hint="98">
+      <q-toolbar>
+        <q-btn dense flat round icon="menu" @click="toggleLeftDrawer" />
+
+        <q-toolbar-title>
+          Plateaux aux conjurés
+        </q-toolbar-title>
+      </q-toolbar>
+    </q-header>
+
+    <q-drawer v-model="leftDrawerOpen" side="left" overlay elevated no-swipe-open>
+      <q-scroll-area class="fit">
+        <q-tabs vertical align="left">
+          <q-route-tab :to="{name: 'home'}" label="Jeux du moment" />
+          <q-route-tab :to="{name: 'log-play'}" label="Log Play" />
+          <q-route-tab :to="{name: 'about'}" label="A propos" />
+        </q-tabs>
+      </q-scroll-area>
+    </q-drawer>
+
+    <q-page-container>
+      <router-view />
+    </q-page-container>
+
+    <q-footer class="bg-grey-8 text-white">
+      <q-toolbar>
+        <q-toolbar-title>
+          <span class="footer">&copy; 2023 les conjurés du temporel</span>
+        </q-toolbar-title>
+      </q-toolbar>
+    </q-footer>
+  </q-layout>
 </template>
 
 <style scoped>
-.header {
-  padding: 0;
-}
-
 .footer {
-  font-size: smaller;
-  color: #333;
-  text-align: right;
-}
-
-.submenu {
-  color: red;
-  background-color: red;
-  z-index: 1000;
-  position: relative;
+  font-size: 0.5em;
 }
 </style>
