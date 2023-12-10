@@ -7,7 +7,7 @@ const isLoading = ref(true)
 const games = ref(null)
 const loadError = ref(null)
 
-db.getGames()
+db.getGamesWithCache()
   .then((result) => {
     games.value = result
     isLoading.value = false
@@ -44,6 +44,6 @@ db.getGames()
 <style scoped>
 .loading {
   width: 100%;
-  height: 100px;
+  height: 300px;
 }
 </style>

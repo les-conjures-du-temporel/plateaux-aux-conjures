@@ -28,6 +28,8 @@ interface PlayActivity {
 
 export class Database {
   _firestore: Firestore
+  _games: Game[]
+  _gamesRefreshed: Date | null
 
   constructor() {
     const firebaseConfig = {
@@ -46,12 +48,19 @@ export class Database {
     this._firestore = getFirestore(firebaseApp)
   }
 
-  /**
-   * Retrieves all games from the Firestore database.
-   *
-   * @async
-   * @returns {Promise<Game[]>} A Promise that resolves to an array of Game objects retrieved from the database.
-   */
+  // Return all the games from the database, caching the response.
+  // The cache is re-evaluated every minute
+  async getGamesWithCache() {
+    const expiration = 60e3
+    if (!this._gamesRefreshed || Date.now() - this._gamesRefreshed.getTime() > expiration) {
+      this._games = await this.getGames()
+      this._gamesRefreshed = new Date()
+    }
+
+    return this._games
+  }
+
+  // Return all the games from the database
   async getGames() {
     const gameQuerySnapshot = await getDocs(collection(this._firestore, 'games'))
     return gameQuerySnapshot.docs.map((doc) => doc.data() as Game)
