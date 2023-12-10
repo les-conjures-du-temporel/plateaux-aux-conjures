@@ -6,6 +6,7 @@ body {
 
   --el-color-primary: #26294e;
   --el-menu-active-color: #26294e;
+  --el-mask-color: transparent;
 }
 
 /**

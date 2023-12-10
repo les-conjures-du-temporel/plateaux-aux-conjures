@@ -25,6 +25,12 @@ db.getGamesWithCache()
     <el-image style="height: 100px" src="/logo-conjures.png" fit="cover" />
   </div>
 
+  <p>
+    Bienvenu ! Tu viens jouer avec nous ?<br>
+    Cette application permet de voir à quoi on joue. Elle t'aide aussi à trouver des jeux
+    dans notre bibliothèque pour tes parties
+  </p>
+
   <div v-loading="isLoading" class="loading" v-if="isLoading"></div>
 
   <el-alert :title="String(loadError)" type="error" v-if="loadError" />
