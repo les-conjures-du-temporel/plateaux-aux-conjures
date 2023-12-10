@@ -15,18 +15,17 @@ function toggleLeftDrawer() {
       <q-toolbar>
         <q-btn dense flat round icon="menu" @click="toggleLeftDrawer" />
 
-        <q-toolbar-title>
-          Plateaux aux conjurés
-        </q-toolbar-title>
+        <q-toolbar-title> Plateaux aux conjurés </q-toolbar-title>
       </q-toolbar>
     </q-header>
 
     <q-drawer v-model="leftDrawerOpen" side="left" overlay elevated no-swipe-open>
       <q-scroll-area class="fit">
-        <q-tabs vertical align="left">
-          <q-route-tab :to="{name: 'home'}" label="Jeux du moment" />
-          <q-route-tab :to="{name: 'log-play'}" label="Log Play" />
-          <q-route-tab :to="{name: 'about'}" label="A propos" />
+        <q-tabs vertical no-caps inline-label active-bg-color="primary">
+          <q-route-tab :to="{ name: 'home' }" label="Jeux du moment" icon="flare" />
+          <q-route-tab :to="{ name: 'suggest' }" label="Assistant" icon="tips_and_updates" />
+          <q-route-tab :to="{ name: 'log-play' }" label="Enregistrer partie" icon="rate_review" />
+          <q-route-tab :to="{ name: 'about' }" label="A propos" icon="info" />
         </q-tabs>
       </q-scroll-area>
     </q-drawer>

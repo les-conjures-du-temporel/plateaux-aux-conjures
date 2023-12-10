@@ -26,10 +26,35 @@ db.getGamesWithCache()
       <img style="height: 100px" src="/logo-conjures.png" alt="Logo des conjurés du temporel" />
     </div>
 
+    <p class="text-h5">Tu viens jouer avec nous ?</p>
     <p>
-      Bienvenu ! Tu viens jouer avec nous ?<br />
-      Cette application permet de voir à quoi on joue. Elle t'aide aussi à trouver des jeux dans notre
-      bibliothèque pour tes parties
+      Si tu veux un coup de main pour lancer ta prochain partie chez nous,
+      <q-btn
+        color="primary"
+        label="je t'aide à choisir un jeu"
+        unelevated
+        no-caps
+        padding="xs md"
+        icon="tips_and_updates"
+        :to="{ name: 'suggest' }"
+      />.
+    </p>
+    <p>
+      Si tu viens de jouer chez nous,
+      <q-btn
+        color="primary"
+        label="enregistre ta partie"
+        unelevated
+        no-caps
+        padding="xs md"
+        icon="rate_review"
+        :to="{ name: 'log-play' }"
+      />
+      pour qu'on sache
+    </p>
+    <p>
+      Sur cette page tu trouves une liste des jeux récemment joués chez nous et d'autres jeux dans
+      notre collection.
     </p>
 
     <div class="spinner" v-if="isLoading">
