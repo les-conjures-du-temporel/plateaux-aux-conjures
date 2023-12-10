@@ -28,8 +28,8 @@ interface PlayActivity {
 
 export class Database {
   _firestore: Firestore
-  _games: Game[]
-  _gamesRefreshed: Date | null
+  _games: Game[] = []
+  _gamesRefreshed: Date | null = null
 
   constructor() {
     const firebaseConfig = {

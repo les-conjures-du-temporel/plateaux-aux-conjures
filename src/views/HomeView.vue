@@ -1,10 +1,11 @@
-<script setup>
-import { ref, inject } from 'vue'
+<script setup lang="ts">
+import { ref, inject, type Ref } from 'vue'
+import type { Database, Game } from '@/database'
 
-const db = inject('db')
+const db: Database = inject('db')!
 
 const isLoading = ref(true)
-const games = ref(null)
+const games: Ref<Game[]> = ref([])
 const loadError = ref(null)
 
 db.getGamesWithCache()
