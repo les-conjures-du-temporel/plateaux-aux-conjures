@@ -5,7 +5,7 @@ import { RouterView } from 'vue-router'
 <template>
   <div class="common-layout">
     <el-container>
-      <el-header>
+      <el-header class="header">
         <el-menu mode="horizontal" :ellipsis="false" router :default-active="$route.name">
           <el-menu-item index="home" :route="{ name: 'home' }">Plateaux aux Conjurés</el-menu-item>
           <div class="flex-grow" />
@@ -15,8 +15,8 @@ import { RouterView } from 'vue-router'
       <el-main>
         <RouterView />
       </el-main>
-      <el-footer>
-        <div class="footer">&copy; 2023 les conjurés du temporel</div>
+      <el-footer class="footer">
+        &copy; 2023 les conjurés du temporel
       </el-footer>
     </el-container>
   </div>
@@ -25,6 +25,10 @@ import { RouterView } from 'vue-router'
 <style scoped>
 .flex-grow {
   flex-grow: 1;
+}
+
+.header {
+  padding: 0;
 }
 
 .footer {

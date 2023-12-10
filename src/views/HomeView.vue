@@ -20,6 +20,10 @@ db.getGamesWithCache()
 </script>
 
 <template>
+  <div class="logo">
+    <el-image style="height: 100px" src="/logo-conjures.png" fit="cover" />
+  </div>
+
   <div v-loading="isLoading" class="loading" v-if="isLoading"></div>
 
   <el-alert :title="String(loadError)" type="error" v-if="loadError" />
@@ -46,5 +50,9 @@ db.getGamesWithCache()
 .loading {
   width: 100%;
   height: 300px;
+}
+
+.logo {
+  text-align: center;
 }
 </style>
