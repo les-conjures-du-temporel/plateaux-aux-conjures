@@ -89,4 +89,9 @@ export class Database {
       await batch.commit()
     }
   }
+
+  // Return when the last sync operation was done
+  async getLastSync() {
+    // TODO
+  }
 }
