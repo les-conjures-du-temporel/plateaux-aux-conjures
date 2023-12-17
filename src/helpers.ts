@@ -24,3 +24,28 @@ export function formatDate(d: Date): string {
 export async function sleep(time: number): Promise<void> {
   return new Promise<void>((resolve) => setTimeout(resolve, time))
 }
+
+/**
+ * The club code is made of 3 base-32 chars.
+ */
+export function generateClubCode(): string {
+  const base32Characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
+  let result = ''
+  for (let i = 0; i < 3; i++) {
+    const index = Math.floor(Math.random() * base32Characters.length)
+    result += base32Characters[index]
+  }
+  return result
+}
+
+/**
+ * Accept small typos in the base-32 chars
+ */
+export function normalizeClubCode(text: string): string | null {
+  const normal = text.trim().toUpperCase().replace(/0/g, 'O').replace(/1/g, 'I').replace(/8/g, 'B')
+
+  if (normal.match(/^[A-Z234567]{3}$/)) {
+    return normal
+  }
+  return null
+}

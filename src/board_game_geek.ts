@@ -102,7 +102,7 @@ export async function getGamesInBatches(
   return games
 }
 
-export async function search(term: string): Promise<{ id: string; name: string }[]> {
+export async function searchGames(term: string): Promise<{ id: string; name: string }[]> {
   const encodedTerm = encodeURIComponent(term)
   const apiUrl = `${BASE_URL}/search?type=boardgame&query=${encodedTerm}`
   const response = await fetchWithTimeout(apiUrl, REQUEST_TIMEOUT)

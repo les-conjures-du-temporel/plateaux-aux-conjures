@@ -1,6 +1,7 @@
 import { getGamesInBatches, listGameIdsInUserCollection } from '@/board_game_geek'
 import { boardGameGeekUser } from '@/config'
 import type { Database, Game } from '@/database'
+import { generateClubCode } from '@/helpers'
 
 interface Progress {
   message: string
@@ -59,14 +60,4 @@ export async function resyncCollection(db: Database, progressCallback: ProgressC
   await db.batchUpdate(gamesToUpdate)
 
   progressCallback({ message: 'Done', level: 'info' })
-}
-
-function generateClubCode(): string {
-  const base32Characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
-  let result = ''
-  for (let i = 0; i < 3; i++) {
-    const index = Math.floor(Math.random() * base32Characters.length)
-    result += base32Characters[index]
-  }
-  return result
 }
