@@ -1,5 +1,5 @@
 import type { Database, Game } from '@/database'
-import type { BggGame, BggSearchHit } from '@/board_game_geek'
+import type { BggSearchHit } from '@/board_game_geek'
 import { buildGameFromBggGame, normalizeClubCode, sleep } from '@/helpers'
 import { getGamesInBatches, searchGames } from '@/board_game_geek'
 

@@ -63,6 +63,7 @@ function abortGameSearch() {
 }
 
 watch(selectedItem, async (newItem) => {
+  selectedItem.value = null
   if (!newItem) {
     return
   } else if (newItem.icon === SEARCH_ICON) {
@@ -74,7 +75,6 @@ watch(selectedItem, async (newItem) => {
     const game = await gameSearcher.loadGame(newItem.value)
     emit('input', game)
     state.value = 'input'
-    selectedItem.value = null
   }
 })
 
@@ -121,6 +121,15 @@ function choseGame(game: Game): void {
   </div>
 
   <div v-if="state === 'full-search'">
+    <q-btn
+      unelevated
+      label="Faire autre recherche"
+      @click="state = 'input'"
+      color="primary"
+      no-caps
+      icon="arrow_back"
+    />
+
     <template v-for="(game, index) in fullSearchResults" :key="game.bgg.id">
       <q-separator v-if="index > 0" color="secondary" />
       <game-item :game="game" class="cursor-pointer" @click="choseGame(game)" />

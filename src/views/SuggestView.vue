@@ -1,58 +1,184 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, inject, type Ref, ref, watch } from 'vue'
 import type { QStepper } from 'quasar'
 import SearchGame from '@/components/SearchGame.vue'
+import { Database, type Game } from '@/database'
+import GameItem from '@/components/GameItem.vue'
 
+type Interval = [number, number]
+
+const db: Database = inject('db')!
 const stepper = ref<InstanceType<typeof QStepper> | null>(null)
 const step = ref('players')
 
-const criteriaPlayers = ref([])
-const criteriaPlayTime = ref([])
-const criteriaAge = ref([])
-const criteriaWeight = ref([])
+// Declare possible options
+type Option = { label: string; value: Interval }
+const criteriaPlayersOptions: Option[] = []
+for (let i = 1; i <= 9; i++) {
+  criteriaPlayersOptions.push({ label: String(i), value: [i, i] })
+}
+criteriaPlayersOptions.push({ label: '10+', value: [10, Number.POSITIVE_INFINITY] })
+const criteriaPlayTimeOptions: Option[] = [
+  { label: 'moins de 15 minutes', value: [0, 15] },
+  { label: 'entre 15 et 30 minutes', value: [15, 30] },
+  { label: 'entre 30 et 60 minutes', value: [30, 60] },
+  { label: 'entre 60 et 120 minutes', value: [60, 120] },
+  { label: 'plus de 120 minutes', value: [120, Number.POSITIVE_INFINITY] }
+]
+const criteriaAgeOptions: Option[] = []
+for (let i = 4; i <= 16; i += 2) {
+  criteriaAgeOptions.push({ label: String(i), value: [i, Number.POSITIVE_INFINITY] })
+}
+const criteriaWeightOptions: Option[] = [
+  { label: 'léger', value: [0, 2] },
+  { label: 'intermédiaire', value: [2, 3] },
+  { label: 'dense', value: [3, 5] }
+]
+
+const criteriaPlayers: Ref<Interval[]> = ref([])
+const criteriaPlayTime: Ref<Interval[]> = ref([])
+const criteriaAge: Ref<Interval | null> = ref(null)
+const criteriaWeight: Ref<Interval[]> = ref([])
+const criteriaFavoriteGames: Ref<Game[]> = ref([])
+const state: Ref<'setup' | 'results'> = ref('setup')
+
+type BonusKind = 'category' | 'mechanic' | 'designer' | 'artist'
+type SuggestedGame = { game: Game; bonus: BonusKind[] }
+const suggestionResults: Ref<SuggestedGame[]> = ref([])
 
 const nextButtonLabel = computed(() => {
-  let criteria
+  let isFilled
 
   if (step.value === 'players') {
-    criteria = criteriaPlayers.value
+    isFilled = Boolean(criteriaPlayers.value.length)
   } else if (step.value === 'playTime') {
-    criteria = criteriaPlayTime.value
+    isFilled = Boolean(criteriaPlayTime.value.length)
   } else if (step.value === 'age') {
-    criteria = criteriaAge.value
+    isFilled = Boolean(criteriaAge.value)
   } else if (step.value === 'weight') {
-    criteria = criteriaWeight.value
+    isFilled = Boolean(criteriaWeight.value.length)
+  } else if (step.value === 'favoriteGames') {
+    isFilled = Boolean(criteriaFavoriteGames.value.length)
   } else {
-    return 'Continuer'
+    isFilled = true
   }
 
-  return criteria.length ? 'Continuer' : 'Peu importe'
+  return isFilled ? 'Continuer' : 'Peu importe'
 })
 
-/*
-criteria:
-- number of players
-- play time
-- min age
-- weight
+function nextStep() {
+  if (step.value !== 'favoriteGames') {
+    stepper.value?.next()
+  } else {
+    state.value = 'results'
+  }
+}
 
-game criteria:
-- categories
-- mechanics
-- designers
-- artists
+watch(state, async (newState) => {
+  if (newState === 'results') {
+    const games = await db.getGamesWithCache()
 
-- must be owned by the club
+    // Apply restrictions
+    const validGames: SuggestedGame[] = []
+    for (const game of games) {
+      if (!game.ownedByClub) {
+        continue
+      }
 
-- bonus for:
-- recent play
-- good rating
+      if (!checkCriteria([game.bgg.minPlayers, game.bgg.maxPlayers], criteriaPlayers.value)) {
+        continue
+      }
 
+      if (
+        !checkCriteria(
+          [game.bgg.minPlayTimeMinutes, game.bgg.maxPlayTimeMinutes],
+          criteriaPlayTime.value
+        )
+      ) {
+        continue
+      }
+
+      const age = criteriaAge.value ? [criteriaAge.value] : []
+      if (!checkCriteria([game.bgg.minAge, game.bgg.minAge], age)) {
+        continue
+      }
+
+      if (!checkCriteria([game.bgg.averageWeight, game.bgg.averageWeight], criteriaWeight.value)) {
+        continue
+      }
+
+      validGames.push({ game, bonus: [] })
+    }
+
+    // Detect similarities
+    applyBonus(validGames, criteriaFavoriteGames.value, 'category')
+    applyBonus(validGames, criteriaFavoriteGames.value, 'mechanic')
+    applyBonus(validGames, criteriaFavoriteGames.value, 'designer')
+    applyBonus(validGames, criteriaFavoriteGames.value, 'artist')
+
+    // TODO give bonus for recent play and good rating
+    // TODO: random sort by day
+
+    validGames.sort((a, b) => b.bonus.length - a.bonus.length)
+
+    suggestionResults.value = validGames
+  }
+})
+
+/**
+ * Check if at least one of the criteria is respected, that is, there is a non-empty intersection
  */
+function checkCriteria(value: [number | null, number | null], criteria: Interval[]): boolean {
+  const [valueMin, valueMax] = value
+  if (!criteria.length) {
+    return true
+  }
+
+  if (valueMin === null || valueMax == null) {
+    return false
+  }
+
+  for (const [ruleMin, ruleMax] of criteria) {
+    if (ruleMin <= valueMax && ruleMax >= valueMin) {
+      return true
+    }
+  }
+
+  return false
+}
+
+function applyBonus(games: SuggestedGame[], favoriteGames: Game[], kind: BonusKind) {
+  const extract = (game: Game): string[] => {
+    if (kind === 'category') {
+      return game.bgg.categories
+    } else if (kind === 'mechanic') {
+      return game.bgg.mechanics
+    } else if (kind === 'designer') {
+      return game.bgg.designers
+    } else if (kind === 'artist') {
+      return game.bgg.artists
+    }
+    throw Error('Not implemented')
+  }
+
+  const favoriteValues = new Set()
+  for (const favoriteGame of favoriteGames) {
+    for (const value of extract(favoriteGame)) {
+      favoriteValues.add(value)
+    }
+  }
+
+  for (const game of games) {
+    const values = extract(game.game)
+    if (values.some((value) => favoriteValues.has(value))) {
+      game.bonus.push(kind)
+    }
+  }
+}
 </script>
 
 <template>
-  <div class="q-pa-md">
+  <div class="q-pa-md" v-if="state === 'setup'">
     <p>
       Envie de lancer une partie, mais tu ne sais pas trop quel jeu ? Laisse-moi t'aider à trouver
       ton bonheur dans notre bibliothèque
@@ -72,51 +198,39 @@ game criteria:
       <q-step name="players" title="Nombre de joueurs" icon="groups">
         <p>Vous êtes combien ?</p>
         <div class="q-gutter-sm">
-          <q-checkbox v-model="criteriaPlayers" :val="1" label="1" />
-          <q-checkbox v-model="criteriaPlayers" :val="2" label="2" />
-          <q-checkbox v-model="criteriaPlayers" :val="3" label="3" />
-          <q-checkbox v-model="criteriaPlayers" :val="4" label="4" />
-          <q-checkbox v-model="criteriaPlayers" :val="5" label="5" />
-          <q-checkbox v-model="criteriaPlayers" :val="6" label="6" />
-          <q-checkbox v-model="criteriaPlayers" :val="7" label="7" />
-          <q-checkbox v-model="criteriaPlayers" :val="8" label="8" />
-          <q-checkbox v-model="criteriaPlayers" :val="9" label="9" />
-          <q-checkbox v-model="criteriaPlayers" :val="10" label="10+" />
+          <q-option-group
+            v-model="criteriaPlayers"
+            :options="criteriaPlayersOptions"
+            inline
+            type="checkbox"
+          />
         </div>
       </q-step>
 
       <q-step name="playTime" title="Temps de jeu" icon="schedule">
         <p>Vous avez combien de temps ?</p>
-        <q-checkbox v-model="criteriaPlayTime" :val="0" label="moins de 15 minutes" />
-        <br />
-        <q-checkbox v-model="criteriaPlayTime" :val="15" label="entre 15 et 30 minutes" />
-        <br />
-        <q-checkbox v-model="criteriaPlayTime" :val="30" label="entre 30 et 60 minutes" />
-        <br />
-        <q-checkbox v-model="criteriaPlayTime" :val="60" label="entre 60 et 120 minutes" />
-        <br />
-        <q-checkbox v-model="criteriaPlayTime" :val="120" label="plus de 120 minutes" />
+        <q-option-group
+          v-model="criteriaPlayTime"
+          :options="criteriaPlayTimeOptions"
+          type="checkbox"
+        />
       </q-step>
 
       <q-step name="age" title="Age minimum" icon="family_restroom">
         <p>A partir de quel âge ?</p>
         <div class="q-gutter-sm">
-          <q-checkbox v-model="criteriaAge" :val="4" label="4" />
-          <q-checkbox v-model="criteriaAge" :val="6" label="6" />
-          <q-checkbox v-model="criteriaAge" :val="8" label="8" />
-          <q-checkbox v-model="criteriaAge" :val="10" label="10" />
-          <q-checkbox v-model="criteriaAge" :val="12" label="12" />
-          <q-checkbox v-model="criteriaAge" :val="14" label="14" />
-          <q-checkbox v-model="criteriaAge" :val="16" label="16" />
+          <q-option-group v-model="criteriaAge" :options="criteriaAgeOptions" inline />
         </div>
       </q-step>
 
       <q-step name="weight" title="Complexité" icon="psychology">
         <p>Quel niveau de complexité ?</p>
         <div class="q-gutter-sm">
-          <q-checkbox v-model="criteriaWeight" :val="0" label="léger" />
-          <q-checkbox v-model="criteriaWeight" :val="2" label="intermédiaire" />
-          <q-checkbox v-model="criteriaWeight" :val="3" label="dense" />
+          <q-option-group
+            v-model="criteriaWeight"
+            :options="criteriaWeightOptions"
+            type="checkbox"
+          />
         </div>
       </q-step>
 
@@ -128,18 +242,24 @@ game criteria:
           >
         </p>
 
-        <search-game />
+        <ul v-for="(game, index) in criteriaFavoriteGames" :key="game.bgg.id">
+          <li>
+            {{ game.name }}
+            <q-btn
+              icon="cancel"
+              unelevated
+              size="sm"
+              @click="criteriaFavoriteGames.splice(index, 1)"
+            ></q-btn>
+          </li>
+        </ul>
+
+        <search-game @input="(game) => criteriaFavoriteGames.push(game)" />
       </q-step>
 
       <template v-slot:navigation>
         <q-stepper-navigation>
-          <q-btn
-            @click="stepper?.next()"
-            color="primary"
-            unelevated
-            no-caps
-            :label="nextButtonLabel"
-          />
+          <q-btn @click="nextStep" color="primary" unelevated no-caps :label="nextButtonLabel" />
           <q-btn
             v-if="step !== 'players'"
             flat
@@ -152,6 +272,25 @@ game criteria:
         </q-stepper-navigation>
       </template>
     </q-stepper>
+  </div>
+
+  <div v-if="state === 'results'" class="q-pa-md">
+    <p>Voilà les résultats</p>
+
+    <q-btn
+      unelevated
+      label="Faire autre recherche"
+      @click="state = 'setup'"
+      color="primary"
+      no-caps
+      icon="arrow_back"
+    />
+
+    <template v-for="(suggestion, index) in suggestionResults" :key="suggestion.game.bgg.id">
+      <q-separator v-if="index > 0" color="secondary" />
+      <div v-if="suggestion.bonus.length">{{ suggestion.bonus }}</div>
+      <game-item :game="suggestion.game" />
+    </template>
   </div>
 </template>
 

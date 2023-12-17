@@ -1,7 +1,7 @@
 import { getGamesInBatches, listGameIdsInUserCollection } from '@/board_game_geek'
 import { boardGameGeekUser } from '@/config'
 import type { Database, Game } from '@/database'
-import { buildGameFromBggGame, generateClubCode } from '@/helpers'
+import { buildGameFromBggGame } from '@/helpers'
 
 interface Progress {
   message: string

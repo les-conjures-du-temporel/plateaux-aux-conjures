@@ -80,6 +80,9 @@ export async function getGamesInBatches(
 ): Promise<BggGame[]> {
   const games = []
   for (let i = 0; i < ids.length; i += GET_GAMES_BATCH_SIZE) {
+    if (i > 0) {
+      await sleep(GET_GAMES_BATCH_SLEEP)
+    }
     const subIds = ids.slice(i, i + GET_GAMES_BATCH_SIZE)
 
     progressCallback({
@@ -95,7 +98,6 @@ export async function getGamesInBatches(
       newGames = await getGames(subIds, progressCallback)
     }
     games.push(...newGames)
-    await sleep(GET_GAMES_BATCH_SLEEP)
   }
 
   progressCallback({ message: `Successfully extracted ${games.length} board games`, level: 'info' })
