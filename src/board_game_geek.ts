@@ -1,4 +1,5 @@
 import type { ProgressCallback } from '@/resync_collection'
+import { sleep } from '@/helpers'
 
 const BASE_URL = 'https://www.boardgamegeek.com/xmlapi2'
 const REQUEST_TIMEOUT = 10e3
@@ -73,25 +74,6 @@ export async function listGameIdsInUserCollection(
   return gamesIds
 }
 
-async function sleep(time: number): Promise<void> {
-  return new Promise<void>((resolve) => setTimeout(resolve, time))
-}
-
-async function fetchWithTimeout(url: string, time: number): Promise<Response> {
-  const controller = new AbortController()
-  const signal = controller.signal
-
-  const timeout = setTimeout(() => {
-    controller.abort()
-  }, time)
-
-  const response = await fetch(url, { signal })
-
-  clearTimeout(timeout)
-
-  return response
-}
-
 export async function getGamesInBatches(
   ids: string[],
   progressCallback: ProgressCallback
@@ -118,6 +100,47 @@ export async function getGamesInBatches(
 
   progressCallback({ message: `Successfully extracted ${games.length} board games`, level: 'info' })
   return games
+}
+
+export async function search(term: string): Promise<{ id: string; name: string }[]> {
+  const encodedTerm = encodeURIComponent(term)
+  const apiUrl = `${BASE_URL}/search?type=boardgame&query=${encodedTerm}`
+  const response = await fetchWithTimeout(apiUrl, REQUEST_TIMEOUT)
+
+  if (response.status !== 200) {
+    throw new Error(`BGG responded with ${response.status}`)
+  }
+  const data = await response.text()
+
+  const parser = new DOMParser()
+  const xmlDoc = parser.parseFromString(data, 'text/xml')
+
+  const searchHits = []
+  for (const gameEl of Array.from(xmlDoc.getElementsByTagName('item'))) {
+    const id = gameEl.getAttribute('id')
+    const name = gameEl.querySelector('name')?.getAttribute('value')
+
+    if (id && name) {
+      searchHits.push({ id, name })
+    }
+  }
+
+  return searchHits
+}
+
+async function fetchWithTimeout(url: string, time: number): Promise<Response> {
+  const controller = new AbortController()
+  const signal = controller.signal
+
+  const timeout = setTimeout(() => {
+    controller.abort()
+  }, time)
+
+  const response = await fetch(url, { signal })
+
+  clearTimeout(timeout)
+
+  return response
 }
 
 async function getGames(ids: string[], progressCallback: ProgressCallback): Promise<BggGame[]> {

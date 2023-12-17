@@ -20,3 +20,7 @@ const dateFormatter = Intl.DateTimeFormat('fr')
 export function formatDate(d: Date): string {
   return dateFormatter.format(d)
 }
+
+export async function sleep(time: number): Promise<void> {
+  return new Promise<void>((resolve) => setTimeout(resolve, time))
+}

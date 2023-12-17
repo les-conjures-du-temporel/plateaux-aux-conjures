@@ -13,13 +13,6 @@ db.getGamesWithCache()
   .then((result) => {
     games.value = result
     isLoading.value = false
-
-    console.log(new Set(games.value.map((game) => game.bgg.minPlayers)))
-    console.log(new Set(games.value.map((game) => game.bgg.maxPlayers)))
-    console.log(new Set(games.value.map((game) => game.bgg.minPlayTimeMinutes)))
-    console.log(new Set(games.value.map((game) => game.bgg.maxPlayTimeMinutes)))
-    console.log(new Set(games.value.map((game) => game.bgg.minAge)))
-    console.log(new Set(games.value.map((game) => game.bgg.averageWeight)))
   })
   .catch((error) => {
     console.error(error)

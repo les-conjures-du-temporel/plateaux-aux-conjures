@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, inject, ref } from 'vue'
 import type { QStepper } from 'quasar'
+import type { Database } from '@/database'
 
 const stepper = ref<InstanceType<typeof QStepper> | null>(null)
 const step = ref('players')
@@ -50,6 +51,8 @@ game criteria:
 - good rating
 
  */
+
+const db: Database = inject('db')!
 
 const gameSearchResults = ref([])
 
