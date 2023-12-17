@@ -28,6 +28,8 @@ const nextButtonLabel = computed(() => {
   return criteria.length ? 'Continuer' : 'Peu importe'
 })
 
+const newFavorite = ref(null)
+
 /*
 criteria:
 - number of players
@@ -48,12 +50,46 @@ game criteria:
 - good rating
 
  */
+
+const gameSearchResults = ref([])
+
+function filterGameSearch(searchTerm, update, abort) {
+  if (searchTerm.length < 2) {
+    abort()
+  } else {
+    update(() => {
+      const newValue = []
+      for (let i = 0; i < 5; i++) {
+        newValue.push(`${searchTerm}-${i}`)
+      }
+      newValue.push({ label: 'Loading...', disabled: true })
+      gameSearchResults.value = newValue
+
+      fetch(
+        `https://boardgamegeek.com/xmlapi2/search?type=boardgame&query=${encodeURIComponent(
+          searchTerm
+        )}`
+      )
+        .then((response) => response.text())
+        .then((data) => {
+          const parser = new DOMParser()
+          const xmlDoc = parser.parseFromString(data, 'text/xml')
+          for (const itemEl of xmlDoc.getElementsByTagName('item')) {
+            gameSearchResults.value.push(itemEl.querySelector('name')?.getAttribute('value'))
+          }
+        })
+    })
+  }
+}
 </script>
 
 <template>
-  <p>Explain the concept</p>
-
   <div class="q-pa-md">
+    <p>
+      Envie de lancer une partie, mais tu ne sais pas trop quel jeu ? Laisse-moi t'aider à trouver
+      ton bonheur dans notre bibliothèque
+    </p>
+
     <q-stepper
       v-model="step"
       ref="stepper"
@@ -83,10 +119,14 @@ game criteria:
 
       <q-step name="playTime" title="Temps de jeu" icon="schedule">
         <p>Vous avez combien de temps ?</p>
-        <q-checkbox v-model="criteriaPlayTime" :val="0" label="moins de 15 minutes" /><br />
-        <q-checkbox v-model="criteriaPlayTime" :val="15" label="entre 15 et 30 minutes" /><br />
-        <q-checkbox v-model="criteriaPlayTime" :val="30" label="entre 30 et 60 minutes" /><br />
-        <q-checkbox v-model="criteriaPlayTime" :val="60" label="entre 60 et 120 minutes" /><br />
+        <q-checkbox v-model="criteriaPlayTime" :val="0" label="moins de 15 minutes" />
+        <br />
+        <q-checkbox v-model="criteriaPlayTime" :val="15" label="entre 15 et 30 minutes" />
+        <br />
+        <q-checkbox v-model="criteriaPlayTime" :val="30" label="entre 30 et 60 minutes" />
+        <br />
+        <q-checkbox v-model="criteriaPlayTime" :val="60" label="entre 60 et 120 minutes" />
+        <br />
         <q-checkbox v-model="criteriaPlayTime" :val="120" label="plus de 120 minutes" />
       </q-step>
 
@@ -113,7 +153,30 @@ game criteria:
       </q-step>
 
       <q-step name="favoriteGames" title="Jeux favoris" icon="thumb_up">
-        <p>Quels sont vos jeux favoris ?</p>
+        <p>
+          Quels sont vos jeux favoris ?<br />
+          <span class="text-caption"
+            >Peut-être on aura un jeu avec une mécanique, théme ou créateurs similaires</span
+          >
+        </p>
+
+        <q-select
+          v-model="newFavorite"
+          label="Chercher"
+          hint="tapper le nom ou code conjuré"
+          hide-dropdown-icon
+          use-input
+          fill-input
+          hide-selected
+          input-debounce="100"
+          :options="gameSearchResults"
+          @filter="filterGameSearch"
+        />
+        <template v-slot:no-option>
+          <q-item>
+            <q-item-section class="text-grey"> No results</q-item-section>
+          </q-item>
+        </template>
       </q-step>
 
       <template v-slot:navigation>

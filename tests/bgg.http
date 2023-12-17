@@ -7,3 +7,14 @@ GET https://boardgamegeek.com/xmlapi2/collection?username=lesconjures&brief=1
 GET https://boardgamegeek.com/xmlapi2/things?id=204817,348554,287954&type=boardgame&versions=1&stats=1
 
 >>! bgg-boardgames.xml
+
+### search
+GET https://boardgamegeek.com/xmlapi2/search?query=chasseurs&type=boardgame
+
+>>! bgg-search.xml
+
+### search-v1
+GET https://boardgamegeek.com/xmlapi/search?search=chasseurs&type=boardgame
+
+>>! bgg-search-v1.xml
+
