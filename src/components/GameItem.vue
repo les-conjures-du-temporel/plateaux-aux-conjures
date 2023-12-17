@@ -104,9 +104,11 @@ const weight = computed(() => {
       <span v-if="game.bgg.averageWeight">
         <span class="text-bold">Complexité</span>: {{ formatNumber(game.bgg.averageWeight) }} / 5<br />
       </span>
-      <span class="text-bold">Code conjuré</span>: {{ game.clubCode }}
-      <span class="text-caption">(utile pour enregistrer tes parties rapidement)</span>
-      <br />
+      <span v-if="game.clubCode">
+        <span class="text-bold">Code conjuré</span>: {{ game.clubCode }}
+        <span class="text-caption">(utile pour enregistrer tes parties rapidement)</span>
+        <br />
+      </span>
       <span v-if="game.lastPlayed">
         <span class="text-bold">Parties enregistrées</span>: {{ game.totalPlays }}<br />
         <span class="text-bold">Dernière partie</span>: {{ formatDate(game.lastPlayed) }}<br />

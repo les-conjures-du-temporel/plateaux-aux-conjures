@@ -22,7 +22,7 @@ db.getGamesWithCache()
 
 <template>
   <div class="q-pa-sm">
-    <div class="logo">
+    <div class="text-center">
       <img style="height: 100px" src="/logo-conjures.png" alt="Logo des conjurés du temporel" />
     </div>
 
@@ -57,30 +57,19 @@ db.getGamesWithCache()
       notre collection.
     </p>
 
-    <div class="spinner" v-if="isLoading">
+    <div class="text-center" v-if="isLoading">
       <q-spinner color="primary" size="5em" />
     </div>
 
     <q-banner class="text-white bg-accent" v-if="loadError">
       Erreur de chargement: {{ loadError }}
-      You have lost connection to the internet. This app is offline.
     </q-banner>
 
-    <div class="">
-      <template v-for="(game, index) in games" :key="game.bgg.id">
-        <q-separator v-if="index > 0" color="secondary" />
-        <game-item :game="game" />
-      </template>
-    </div>
+    <template v-for="(game, index) in games" :key="game.bgg.id">
+      <q-separator v-if="index > 0" color="secondary" />
+      <game-item :game="game" />
+    </template>
   </div>
 </template>
 
-<style scoped>
-.logo {
-  text-align: center;
-}
-
-.spinner {
-  text-align: center;
-}
-</style>
+<style scoped></style>

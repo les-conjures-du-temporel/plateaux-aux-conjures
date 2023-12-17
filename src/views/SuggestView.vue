@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, inject, ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { QStepper } from 'quasar'
-import type { Database } from '@/database'
+import SearchGame from '@/components/SearchGame.vue'
 
 const stepper = ref<InstanceType<typeof QStepper> | null>(null)
 const step = ref('players')
@@ -29,8 +29,6 @@ const nextButtonLabel = computed(() => {
   return criteria.length ? 'Continuer' : 'Peu importe'
 })
 
-const newFavorite = ref(null)
-
 /*
 criteria:
 - number of players
@@ -51,39 +49,6 @@ game criteria:
 - good rating
 
  */
-
-const db: Database = inject('db')!
-
-const gameSearchResults = ref([])
-
-function filterGameSearch(searchTerm, update, abort) {
-  if (searchTerm.length < 2) {
-    abort()
-  } else {
-    update(() => {
-      const newValue = []
-      for (let i = 0; i < 5; i++) {
-        newValue.push(`${searchTerm}-${i}`)
-      }
-      newValue.push({ label: 'Loading...', disabled: true })
-      gameSearchResults.value = newValue
-
-      fetch(
-        `https://boardgamegeek.com/xmlapi2/search?type=boardgame&query=${encodeURIComponent(
-          searchTerm
-        )}`
-      )
-        .then((response) => response.text())
-        .then((data) => {
-          const parser = new DOMParser()
-          const xmlDoc = parser.parseFromString(data, 'text/xml')
-          for (const itemEl of xmlDoc.getElementsByTagName('item')) {
-            gameSearchResults.value.push(itemEl.querySelector('name')?.getAttribute('value'))
-          }
-        })
-    })
-  }
-}
 </script>
 
 <template>
@@ -163,23 +128,7 @@ function filterGameSearch(searchTerm, update, abort) {
           >
         </p>
 
-        <q-select
-          v-model="newFavorite"
-          label="Chercher"
-          hint="tapper le nom ou code conjuré"
-          hide-dropdown-icon
-          use-input
-          fill-input
-          hide-selected
-          input-debounce="100"
-          :options="gameSearchResults"
-          @filter="filterGameSearch"
-        />
-        <template v-slot:no-option>
-          <q-item>
-            <q-item-section class="text-grey"> No results</q-item-section>
-          </q-item>
-        </template>
+        <search-game />
       </q-step>
 
       <template v-slot:navigation>

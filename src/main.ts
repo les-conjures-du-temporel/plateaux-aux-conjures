@@ -10,6 +10,7 @@ import { Quasar } from 'quasar'
 import quasarLang from 'quasar/lang/fr'
 import { Database } from '@/database'
 import router from '@/router'
+import { GameSeacher } from '@/game_searcher'
 
 const app = createApp(App)
 
@@ -21,5 +22,6 @@ app.use(Quasar, {
 
 const db = new Database()
 app.provide('db', db)
+app.provide('gameSearcher', new GameSeacher(db))
 
 app.mount('#app')

@@ -1,7 +1,7 @@
 import { getGamesInBatches, listGameIdsInUserCollection } from '@/board_game_geek'
 import { boardGameGeekUser } from '@/config'
 import type { Database, Game } from '@/database'
-import { generateClubCode } from '@/helpers'
+import { buildGameFromBggGame, generateClubCode } from '@/helpers'
 
 interface Progress {
   message: string
@@ -39,14 +39,7 @@ export async function resyncCollection(db: Database, progressCallback: ProgressC
 
     const staleGame = staleGames.get(id)
     if (!staleGame) {
-      gamesToAdd.push({
-        bgg: bggGame,
-        ownedByClub: true,
-        clubCode: generateClubCode(),
-        lastPlayed: null,
-        name: bggGame.primaryName,
-        totalPlays: 0
-      })
+      gamesToAdd.push(buildGameFromBggGame(bggGame, true))
     } else {
       gamesToUpdate.set(id, { bgg: bggGame, ownedByClub: novelGameIds.has(id) })
     }

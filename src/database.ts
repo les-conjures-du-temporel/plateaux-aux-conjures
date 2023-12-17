@@ -1,6 +1,6 @@
 import type { BggGame } from '@/board_game_geek'
 import { initializeApp } from 'firebase/app'
-import { getFirestore, Firestore, getDocs, collection, writeBatch, doc } from 'firebase/firestore'
+import { collection, doc, Firestore, getDocs, getFirestore, writeBatch } from 'firebase/firestore'
 
 /**
  * Represents a board game, that may or may not be in the club's catalog
@@ -12,7 +12,7 @@ export interface Game {
   bgg: BggGame
   ownedByClub: boolean
   // The code used to log a play
-  clubCode: string
+  clubCode: string | null
   lastPlayed: Date | null
   totalPlays: number
 }
@@ -28,8 +28,8 @@ interface PlayActivity {
 
 export class Database {
   _firestore: Firestore
-  _games: Game[] = []
   _gamesRefreshed: Date | null = null
+  _gamesPromise: Promise<Game[]> | null = null
 
   constructor() {
     const firebaseConfig = {
@@ -50,14 +50,18 @@ export class Database {
 
   // Return all the games from the database, caching the response.
   // The cache is re-evaluated every minute
-  async getGamesWithCache() {
+  async getGamesWithCache(): Promise<Game[]> {
     const expiration = 60e3
-    if (!this._gamesRefreshed || Date.now() - this._gamesRefreshed.getTime() > expiration) {
-      this._games = await this.getGames()
+    if (
+      !this._gamesPromise ||
+      !this._gamesRefreshed ||
+      Date.now() - this._gamesRefreshed.getTime() > expiration
+    ) {
+      this._gamesPromise = this.getGames()
       this._gamesRefreshed = new Date()
     }
 
-    return this._games
+    return this._gamesPromise
   }
 
   // Return all the games from the database

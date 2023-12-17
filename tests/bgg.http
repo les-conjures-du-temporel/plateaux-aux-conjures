@@ -9,7 +9,7 @@ GET https://boardgamegeek.com/xmlapi2/things?id=204817,348554,287954&type=boardg
 >>! bgg-boardgames.xml
 
 ### search
-GET https://boardgamegeek.com/xmlapi2/search?query=chasseurs&type=boardgame
+GET https://boardgamegeek.com/xmlapi2/search?query=wonders&type=boardgame
 
 >>! bgg-search.xml
 
