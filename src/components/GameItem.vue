@@ -86,8 +86,8 @@ const weight = computed(() => {
 
     <transition
       name="expand"
-      @enter="(element) => (element.style.height = `${element.scrollHeight}px`)"
-      @leave="(element) => (element.style.height = '0px')"
+      @enter="(element) => ((element as HTMLElement).style.height = `${element.scrollHeight}px`)"
+      @leave="(element) => ((element as HTMLElement).style.height = '0px')"
     >
       <q-card-section v-if="showDetails" class="q-pa-xs">
         <span v-if="game.bgg.categories.length">
