@@ -3,7 +3,8 @@ import { inject, type Ref, ref, watch } from 'vue'
 import SearchGame from '@/components/SearchGame.vue'
 import { Database, type Game } from '@/database'
 import GameItem from '@/components/GameItem.vue'
-import { pluralS } from '@/helpers'
+import { pluralS, sleep } from '@/helpers'
+import { GameScorer } from '@/game_scorer'
 
 type Interval = [number, number]
 
@@ -27,7 +28,7 @@ const criteriaPlayTimeOptions: Option[] = [
 ]
 const criteriaAgeOptions: MaybeOption[] = []
 for (let i = 4; i <= 16; i += 2) {
-  criteriaAgeOptions.push({ label: String(i), value: [0, i] })
+  criteriaAgeOptions.push({ label: `${i} +`, value: [0, i] })
 }
 criteriaAgeOptions.push({ label: 'Peu importe', value: null })
 const criteriaWeightOptions: Option[] = [
@@ -42,11 +43,13 @@ const criteriaAge: Ref<Interval | null> = ref(null)
 const criteriaWeight: Ref<Interval[]> = ref([])
 const criteriaFavoriteGames: Ref<Game[]> = ref([])
 
-type BonusKind = 'category' | 'mechanic' | 'designer' | 'artist'
-type SuggestedGame = { game: Game; bonus: BonusKind[] }
+type SuggestedGame = { game: Game; score: number }
 const suggestionResults: Ref<SuggestedGame[] | null> = ref(null)
 const loadingSuggestionResults: Ref<boolean> = ref(false)
 const tooManyResults: Ref<boolean> = ref(false)
+
+const gameScorer = new GameScorer(db)
+const MAX_SUGGESTIONS = 25
 
 watch(
   [criteriaPlayers, criteriaPlayTime, criteriaAge, criteriaWeight, criteriaFavoriteGames],
@@ -63,11 +66,17 @@ watch(
       return
     }
 
+    const gamesPromise = db.getGamesWithCache()
+
+    // Show loading for a while
     loadingSuggestionResults.value = true
-    const games = await db.getGamesWithCache()
+    suggestionResults.value = null
+    await sleep(200)
+
+    const games = await gamesPromise
 
     // Apply restrictions
-    const validGames: SuggestedGame[] = []
+    const validGames: Game[] = []
     for (const game of games) {
       if (!game.ownedByClub) {
         continue
@@ -95,23 +104,18 @@ watch(
         continue
       }
 
-      validGames.push({ game, bonus: [] })
+      validGames.push(game)
     }
 
-    // Detect similarities
-    applyBonus(validGames, criteriaFavoriteGames.value, 'category')
-    applyBonus(validGames, criteriaFavoriteGames.value, 'mechanic')
-    applyBonus(validGames, criteriaFavoriteGames.value, 'designer')
-    applyBonus(validGames, criteriaFavoriteGames.value, 'artist')
+    const scoredGames = await gameScorer.scoreGames(validGames, criteriaFavoriteGames.value)
+    scoredGames.sort((a, b) => b.score - a.score)
 
-    // TODO give bonus for recent play and good rating
-    // TODO: random sort by day
-
-    validGames.sort((a, b) => b.bonus.length - a.bonus.length)
-
-    suggestionResults.value = validGames.slice(0, 50)
+    suggestionResults.value = scoredGames.slice(0, MAX_SUGGESTIONS)
     loadingSuggestionResults.value = false
-    tooManyResults.value = validGames.length > 50
+    tooManyResults.value = scoredGames.length > MAX_SUGGESTIONS
+  },
+  {
+    deep: true
   }
 )
 
@@ -136,41 +140,12 @@ function checkCriteria(value: [number | null, number | null], criteria: Interval
 
   return false
 }
-
-function applyBonus(games: SuggestedGame[], favoriteGames: Game[], kind: BonusKind) {
-  const extract = (game: Game): string[] => {
-    if (kind === 'category') {
-      return game.bgg.categories
-    } else if (kind === 'mechanic') {
-      return game.bgg.mechanics
-    } else if (kind === 'designer') {
-      return game.bgg.designers
-    } else if (kind === 'artist') {
-      return game.bgg.artists
-    }
-    throw Error('Not implemented')
-  }
-
-  const favoriteValues = new Set()
-  for (const favoriteGame of favoriteGames) {
-    for (const value of extract(favoriteGame)) {
-      favoriteValues.add(value)
-    }
-  }
-
-  for (const game of games) {
-    const values = extract(game.game)
-    if (values.some((value) => favoriteValues.has(value))) {
-      game.bonus.push(kind)
-    }
-  }
-}
 </script>
 
 <template>
   <div class="q-pa-md">
     <p>
-      Envie de lancer une partie, mais tu ne sais pas trop quel jeu ?<br />
+      Envie de lancer une partie, mais tu ne sais pas trop quel jeu prendre ?<br />
       Laisse-moi t'aider à trouver ton bonheur dans notre bibliothèque
     </p>
 
@@ -307,7 +282,6 @@ function applyBonus(games: SuggestedGame[], favoriteGames: Game[], kind: BonusKi
 
       <template v-for="(suggestion, index) in suggestionResults" :key="suggestion.game.bgg.id">
         <q-separator v-if="index > 0" color="secondary" />
-        <div v-if="suggestion.bonus.length">{{ suggestion.bonus }}</div>
         <game-item :game="suggestion.game" />
       </template>
     </div>
