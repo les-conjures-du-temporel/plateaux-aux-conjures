@@ -13,7 +13,7 @@ export class GameSeacher {
   _bggGameCache: Map<string, Game> = new Map()
   bggDebounce: number = 1500
   maxResults: number = 7
-  maxFullResults: number = 50
+  maxFullResults: number = 40
 
   constructor(db: Database) {
     this._db = db
@@ -113,7 +113,7 @@ export class GameSeacher {
   }
 
   /**
-   * Do a full search using local and remote games. Sort results by first those in the club, then by alphabetical order
+   * Do a full search using local and remote games
    */
   async doFullSearch(term: string) {
     const games = await this._db.getGamesWithCache()
@@ -143,11 +143,6 @@ export class GameSeacher {
         }
       }
     }
-
-    // Sort by descending `ownedByClub` and increasing name
-    hits.sort(
-      (a, b) => Number(b.ownedByClub) - Number(a.ownedByClub) || a.name.localeCompare(b.name)
-    )
 
     return hits
   }

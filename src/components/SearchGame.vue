@@ -132,6 +132,10 @@ function choseGame(game: Game): void {
       icon="arrow_back"
     />
 
+    <q-banner class="bg-secondary text-white q-my-sm" v-if="!fullSearchResults.length">
+      Aucun résultat n'a été trouvé
+    </q-banner>
+
     <template v-for="(game, index) in fullSearchResults" :key="game.bgg.id">
       <q-separator v-if="index > 0" color="secondary" />
       <game-item :game="game" class="cursor-pointer" @click="choseGame(game)" />
