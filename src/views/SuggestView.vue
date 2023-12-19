@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { computed, inject, type Ref, ref, watch } from 'vue'
-import type { QStepper } from 'quasar'
+import { inject, type Ref, ref, watch } from 'vue'
 import SearchGame from '@/components/SearchGame.vue'
 import { Database, type Game } from '@/database'
 import GameItem from '@/components/GameItem.vue'
+import { pluralS } from '@/helpers'
 
 type Interval = [number, number]
 
 const db: Database = inject('db')!
-const stepper = ref<InstanceType<typeof QStepper> | null>(null)
-const step = ref('players')
+const tab = ref('players')
 
 // Declare possible options
 type Option = { label: string; value: Interval }
+type MaybeOption = { label: string; value: Interval | null }
 const criteriaPlayersOptions: Option[] = []
 for (let i = 1; i <= 9; i++) {
   criteriaPlayersOptions.push({ label: String(i), value: [i, i] })
@@ -25,10 +25,11 @@ const criteriaPlayTimeOptions: Option[] = [
   { label: 'entre 60 et 120 minutes', value: [60, 120] },
   { label: 'plus de 120 minutes', value: [120, Number.POSITIVE_INFINITY] }
 ]
-const criteriaAgeOptions: Option[] = []
+const criteriaAgeOptions: MaybeOption[] = []
 for (let i = 4; i <= 16; i += 2) {
-  criteriaAgeOptions.push({ label: String(i), value: [i, Number.POSITIVE_INFINITY] })
+  criteriaAgeOptions.push({ label: String(i), value: [0, i] })
 }
+criteriaAgeOptions.push({ label: 'Peu importe', value: null })
 const criteriaWeightOptions: Option[] = [
   { label: 'léger', value: [0, 2] },
   { label: 'intermédiaire', value: [2, 3] },
@@ -40,42 +41,29 @@ const criteriaPlayTime: Ref<Interval[]> = ref([])
 const criteriaAge: Ref<Interval | null> = ref(null)
 const criteriaWeight: Ref<Interval[]> = ref([])
 const criteriaFavoriteGames: Ref<Game[]> = ref([])
-const state: Ref<'setup' | 'results'> = ref('setup')
 
 type BonusKind = 'category' | 'mechanic' | 'designer' | 'artist'
 type SuggestedGame = { game: Game; bonus: BonusKind[] }
-const suggestionResults: Ref<SuggestedGame[]> = ref([])
+const suggestionResults: Ref<SuggestedGame[] | null> = ref(null)
+const loadingSuggestionResults: Ref<boolean> = ref(false)
+const tooManyResults: Ref<boolean> = ref(false)
 
-const nextButtonLabel = computed(() => {
-  let isFilled
+watch(
+  [criteriaPlayers, criteriaPlayTime, criteriaAge, criteriaWeight, criteriaFavoriteGames],
+  async () => {
+    if (
+      !criteriaPlayers.value.length &&
+      !criteriaPlayTime.value.length &&
+      !criteriaAge.value &&
+      !criteriaWeight.value.length &&
+      !criteriaFavoriteGames.value.length
+    ) {
+      suggestionResults.value = null
+      tooManyResults.value = false
+      return
+    }
 
-  if (step.value === 'players') {
-    isFilled = Boolean(criteriaPlayers.value.length)
-  } else if (step.value === 'playTime') {
-    isFilled = Boolean(criteriaPlayTime.value.length)
-  } else if (step.value === 'age') {
-    isFilled = Boolean(criteriaAge.value)
-  } else if (step.value === 'weight') {
-    isFilled = Boolean(criteriaWeight.value.length)
-  } else if (step.value === 'favoriteGames') {
-    isFilled = Boolean(criteriaFavoriteGames.value.length)
-  } else {
-    isFilled = true
-  }
-
-  return isFilled ? 'Continuer' : 'Peu importe'
-})
-
-function nextStep() {
-  if (step.value !== 'favoriteGames') {
-    stepper.value?.next()
-  } else {
-    state.value = 'results'
-  }
-}
-
-watch(state, async (newState) => {
-  if (newState === 'results') {
+    loadingSuggestionResults.value = true
     const games = await db.getGamesWithCache()
 
     // Apply restrictions
@@ -121,9 +109,11 @@ watch(state, async (newState) => {
 
     validGames.sort((a, b) => b.bonus.length - a.bonus.length)
 
-    suggestionResults.value = validGames
+    suggestionResults.value = validGames.slice(0, 50)
+    loadingSuggestionResults.value = false
+    tooManyResults.value = validGames.length > 50
   }
-})
+)
 
 /**
  * Check if at least one of the criteria is respected, that is, there is a non-empty intersection
@@ -178,119 +168,149 @@ function applyBonus(games: SuggestedGame[], favoriteGames: Game[], kind: BonusKi
 </script>
 
 <template>
-  <div class="q-pa-md" v-if="state === 'setup'">
+  <div class="q-pa-md">
     <p>
-      Envie de lancer une partie, mais tu ne sais pas trop quel jeu ? Laisse-moi t'aider à trouver
-      ton bonheur dans notre bibliothèque
+      Envie de lancer une partie, mais tu ne sais pas trop quel jeu ?<br />
+      Laisse-moi t'aider à trouver ton bonheur dans notre bibliothèque
     </p>
 
-    <q-stepper
-      v-model="step"
-      ref="stepper"
-      color="primary"
-      animated
-      contracted
-      bordered
-      flat
-      header-nav
-      active-icon="none"
-    >
-      <q-step name="players" title="Nombre de joueurs" icon="groups">
-        <p>Vous êtes combien ?</p>
-        <div class="q-gutter-sm">
-          <q-option-group
-            v-model="criteriaPlayers"
-            :options="criteriaPlayersOptions"
-            inline
-            type="checkbox"
-          />
-        </div>
-      </q-step>
-
-      <q-step name="playTime" title="Temps de jeu" icon="schedule">
-        <p>Vous avez combien de temps ?</p>
-        <q-option-group
-          v-model="criteriaPlayTime"
-          :options="criteriaPlayTimeOptions"
-          type="checkbox"
+    <q-card>
+      <q-tabs
+        v-model="tab"
+        dense
+        class="text-grey"
+        active-color="primary"
+        indicator-color="primary"
+        align="justify"
+        narrow-indicator
+      >
+        <q-tab
+          name="players"
+          label="Joueurs"
+          icon="groups"
+          no-caps
+          :alert="criteriaPlayers.length ? 'accent' : false"
         />
-      </q-step>
+        <q-tab
+          name="playTime"
+          label="Temps"
+          icon="schedule"
+          no-caps
+          :alert="criteriaPlayTime.length ? 'accent' : false"
+        />
+        <q-tab
+          name="age"
+          label="Age"
+          icon="family_restroom"
+          no-caps
+          :alert="criteriaAge ? 'accent' : false"
+        />
+        <q-tab
+          name="weight"
+          label="Complexité"
+          icon="psychology"
+          no-caps
+          :alert="criteriaWeight.length ? 'accent' : false"
+        />
+        <q-tab
+          name="favoriteGames"
+          label="Favoris"
+          icon="thumb_up"
+          no-caps
+          :alert="criteriaFavoriteGames.length ? 'accent' : false"
+        />
+      </q-tabs>
 
-      <q-step name="age" title="Age minimum" icon="family_restroom">
-        <p>A partir de quel âge ?</p>
-        <div class="q-gutter-sm">
-          <q-option-group v-model="criteriaAge" :options="criteriaAgeOptions" inline />
-        </div>
-      </q-step>
+      <q-separator />
 
-      <q-step name="weight" title="Complexité" icon="psychology">
-        <p>Quel niveau de complexité ?</p>
-        <div class="q-gutter-sm">
+      <q-tab-panels v-model="tab" animated>
+        <q-tab-panel name="players">
+          <p>Vous êtes combien ?</p>
+          <div class="q-gutter-sm">
+            <q-option-group
+              v-model="criteriaPlayers"
+              :options="criteriaPlayersOptions"
+              inline
+              type="checkbox"
+            />
+          </div>
+        </q-tab-panel>
+
+        <q-tab-panel name="playTime">
+          <p>Vous avez combien de temps ?</p>
           <q-option-group
-            v-model="criteriaWeight"
-            :options="criteriaWeightOptions"
+            v-model="criteriaPlayTime"
+            :options="criteriaPlayTimeOptions"
             type="checkbox"
           />
-        </div>
-      </q-step>
+        </q-tab-panel>
 
-      <q-step name="favoriteGames" title="Jeux favoris" icon="thumb_up">
-        <p>
-          Quels sont vos jeux favoris ?<br />
-          <span class="text-caption"
-            >Peut-être on aura un jeu avec une mécanique, théme ou créateurs similaires</span
-          >
-        </p>
+        <q-tab-panel name="age">
+          <p>A partir de quel âge ?</p>
+          <div class="q-gutter-sm">
+            <q-option-group v-model="criteriaAge" :options="criteriaAgeOptions" inline />
+          </div>
+        </q-tab-panel>
 
-        <ul v-for="(game, index) in criteriaFavoriteGames" :key="game.bgg.id">
-          <li>
-            {{ game.name }}
-            <q-btn
-              icon="cancel"
-              unelevated
-              size="sm"
-              @click="criteriaFavoriteGames.splice(index, 1)"
-            ></q-btn>
-          </li>
-        </ul>
+        <q-tab-panel name="weight">
+          <p>Quel niveau de complexité ?</p>
+          <div class="q-gutter-sm">
+            <q-option-group
+              v-model="criteriaWeight"
+              :options="criteriaWeightOptions"
+              type="checkbox"
+            />
+          </div>
+        </q-tab-panel>
 
-        <search-game @input="(game) => criteriaFavoriteGames.push(game)" />
-      </q-step>
+        <q-tab-panel name="favoriteGames">
+          <p>
+            Quels sont vos jeux favoris ?<br />
+            <span class="text-caption"
+              >Peut-être on aura un jeu avec une mécanique, théme ou créateurs similaires</span
+            >
+          </p>
 
-      <template v-slot:navigation>
-        <q-stepper-navigation>
-          <q-btn @click="nextStep" color="primary" unelevated no-caps :label="nextButtonLabel" />
-          <q-btn
-            v-if="step !== 'players'"
-            flat
-            color="primary"
-            @click="stepper?.previous()"
-            label="Retour"
-            no-caps
-            class="q-ml-sm"
-          />
-        </q-stepper-navigation>
-      </template>
-    </q-stepper>
+          <ul v-for="(game, index) in criteriaFavoriteGames" :key="game.bgg.id">
+            <li>
+              {{ game.name }}
+              <q-btn
+                icon="cancel"
+                unelevated
+                size="sm"
+                @click="criteriaFavoriteGames.splice(index, 1)"
+              ></q-btn>
+            </li>
+          </ul>
+
+          <search-game @input="(game) => criteriaFavoriteGames.push(game)" />
+        </q-tab-panel>
+      </q-tab-panels>
+    </q-card>
   </div>
 
-  <div v-if="state === 'results'" class="q-pa-md">
-    <p>Voilà les résultats</p>
+  <div class="text-center" v-if="loadingSuggestionResults">
+    <q-spinner color="primary" size="3em" />
+  </div>
 
-    <q-btn
-      unelevated
-      label="Faire autre recherche"
-      @click="state = 'setup'"
-      color="primary"
-      no-caps
-      icon="arrow_back"
-    />
+  <div class="q-ma-md" v-if="suggestionResults">
+    <q-banner class="bg-secondary text-white" v-if="!suggestionResults.length">
+      Aucun résultat n'a été trouvé. Essaye de changer les critères de la recherche
+    </q-banner>
 
-    <template v-for="(suggestion, index) in suggestionResults" :key="suggestion.game.bgg.id">
-      <q-separator v-if="index > 0" color="secondary" />
-      <div v-if="suggestion.bonus.length">{{ suggestion.bonus }}</div>
-      <game-item :game="suggestion.game" />
-    </template>
+    <div v-else>
+      <p v-if="tooManyResults">
+        Voici les {{ suggestionResults.length }} premières suggéstions. Il y a trop de résultats à
+        afficher, essaye de raffiner un peu tes critères
+      </p>
+      <p v-else>Voici {{ pluralS(suggestionResults.length, 'suggéstion') }}</p>
+
+      <template v-for="(suggestion, index) in suggestionResults" :key="suggestion.game.bgg.id">
+        <q-separator v-if="index > 0" color="secondary" />
+        <div v-if="suggestion.bonus.length">{{ suggestion.bonus }}</div>
+        <game-item :game="suggestion.game" />
+      </template>
+    </div>
   </div>
 </template>
 
