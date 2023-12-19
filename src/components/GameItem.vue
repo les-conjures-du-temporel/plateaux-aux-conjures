@@ -47,7 +47,7 @@ const weight = computed(() => {
 
 <template>
   <q-card flat class="q-my-sm">
-    <q-card-section horizontal>
+    <q-card-section horizontal @click="showDetails = !showDetails">
       <q-img v-if="game.bgg.thumbnail" :src="game.bgg.thumbnail" class="col-3" fit="scale-down" />
 
       <q-card-section class="col-9">
@@ -78,49 +78,65 @@ const weight = computed(() => {
               outline
               class="q-my-xs"
               no-caps
-              @click="showDetails = !showDetails"
             />
           </div>
         </div>
       </q-card-section>
     </q-card-section>
 
-    <q-card-section v-if="showDetails" class="q-pa-xs">
-      <span v-if="game.bgg.categories.length">
-        <span class="text-bold">Catégories</span>: {{ game.bgg.categories.join(', ') }}<br />
-      </span>
-      <span v-if="game.bgg.mechanics.length">
-        <span class="text-bold">Mécaniques</span>: {{ game.bgg.mechanics.join(', ') }}<br />
-      </span>
-      <span v-if="game.bgg.designers.length">
-        <span class="text-bold">Créateurs</span>: {{ game.bgg.designers.join(', ') }}<br />
-      </span>
-      <span v-if="game.bgg.artists.length">
-        <span class="text-bold">Artistes</span>: {{ game.bgg.artists.join(', ') }}<br />
-      </span>
-      <span v-if="game.bgg.averageRating">
-        <span class="text-bold">Note</span>: {{ formatNumber(game.bgg.averageRating) }} / 10<br />
-      </span>
-      <span v-if="game.bgg.averageWeight">
-        <span class="text-bold">Complexité</span>: {{ formatNumber(game.bgg.averageWeight) }} / 5<br />
-      </span>
-      <span v-if="game.clubCode">
-        <span class="text-bold">Code conjuré</span>: {{ game.clubCode }}
-        <span class="text-caption">(utile pour enregistrer tes parties rapidement)</span>
-        <br />
-      </span>
-      <span v-if="game.lastPlayed">
-        <span class="text-bold">Parties enregistrées</span>: {{ game.totalPlays }}<br />
-        <span class="text-bold">Dernière partie</span>: {{ formatDate(game.lastPlayed) }}<br />
-      </span>
-      Aller à la page sur
-      <a
-        :href="'https://boardgamegeek.com/boardgame/' + encodeURIComponent(game.bgg.id)"
-        target="_blank"
-        >boardgamegeek.com</a
-      >
-    </q-card-section>
+    <transition
+      name="expand"
+      @enter="(element) => (element.style.height = `${element.scrollHeight}px`)"
+      @leave="(element) => (element.style.height = '0px')"
+    >
+      <q-card-section v-if="showDetails" class="q-pa-xs">
+        <span v-if="game.bgg.categories.length">
+          <q-badge>Catégories</q-badge> {{ game.bgg.categories.join(', ') }}<br />
+        </span>
+        <span v-if="game.bgg.mechanics.length">
+          <q-badge>Mécaniques</q-badge> {{ game.bgg.mechanics.join(', ') }}<br />
+        </span>
+        <span v-if="game.bgg.designers.length">
+          <q-badge>Créateurs</q-badge> {{ game.bgg.designers.join(', ') }}<br />
+        </span>
+        <span v-if="game.bgg.artists.length">
+          <q-badge>Artistes</q-badge> {{ game.bgg.artists.join(', ') }}<br />
+        </span>
+        <span v-if="game.bgg.averageRating">
+          <q-badge>Note</q-badge> {{ formatNumber(game.bgg.averageRating) }} / 10<br />
+        </span>
+        <span v-if="game.bgg.averageWeight">
+          <q-badge>Complexité</q-badge> {{ formatNumber(game.bgg.averageWeight) }} / 5<br />
+        </span>
+        <span v-if="game.clubCode">
+          <q-badge>Code conjuré</q-badge> {{ game.clubCode }}<br />
+          <span class="text-caption">(utile pour enregistrer tes parties rapidement)</span>
+          <br />
+        </span>
+        <span v-if="game.lastPlayed">
+          <q-badge>Parties enregistrées</q-badge> {{ game.totalPlays }}<br />
+          <q-badge>Dernière partie</q-badge> {{ formatDate(game.lastPlayed) }}<br />
+        </span>
+        Aller à la page sur
+        <a
+          :href="'https://boardgamegeek.com/boardgame/' + encodeURIComponent(game.bgg.id)"
+          target="_blank"
+          >boardgamegeek.com</a
+        >
+      </q-card-section>
+    </transition>
   </q-card>
 </template>
 
-<style scoped></style>
+<style scoped>
+.expand-enter-active,
+.expand-leave-active {
+  transition: height 0.25s ease;
+  overflow: hidden;
+}
+
+.expand-enter-from,
+.expand-leave-to {
+  height: 0;
+}
+</style>

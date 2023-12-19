@@ -76,9 +76,10 @@ watch(
     const games = await gamesPromise
 
     // Apply restrictions
+    const favoriteGameIds = new Set(criteriaFavoriteGames.value.map((favorite) => favorite.bgg.id))
     const validGames: Game[] = []
     for (const game of games) {
-      if (!game.ownedByClub) {
+      if (!game.ownedByClub || favoriteGameIds.has(game.bgg.id)) {
         continue
       }
 
@@ -139,6 +140,12 @@ function checkCriteria(value: [number | null, number | null], criteria: Interval
   }
 
   return false
+}
+
+function addFavoriteGame(game: Game): void {
+  if (criteriaFavoriteGames.value.every((favorite) => favorite.bgg.id !== game.bgg.id)) {
+    criteriaFavoriteGames.value.push(game)
+  }
 }
 </script>
 
@@ -258,7 +265,9 @@ function checkCriteria(value: [number | null, number | null], criteria: Interval
             </li>
           </ul>
 
-          <search-game @input="(game) => criteriaFavoriteGames.push(game)" />
+          <p v-if="criteriaFavoriteGames.length">Tu peux en ajouter d'autres si tu veux :</p>
+
+          <search-game @input="addFavoriteGame" />
         </q-tab-panel>
       </q-tab-panels>
     </q-card>
@@ -274,10 +283,7 @@ function checkCriteria(value: [number | null, number | null], criteria: Interval
     </q-banner>
 
     <div v-else>
-      <p v-if="tooManyResults">
-        Voici les {{ suggestionResults.length }} premières suggéstions. Il y a trop de résultats à
-        afficher, essaye de raffiner un peu tes critères
-      </p>
+      <p v-if="tooManyResults">Voici les {{ suggestionResults.length }} meilleures suggéstions</p>
       <p v-else>Voici {{ pluralS(suggestionResults.length, 'suggéstion') }}</p>
 
       <template v-for="(suggestion, index) in suggestionResults" :key="suggestion.game.bgg.id">

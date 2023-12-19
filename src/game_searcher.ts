@@ -11,7 +11,7 @@ export class GameSeacher {
   _localGames: { text: string; game: Game }[] | null = null
   _bggSearchCache: Map<string, BggSearchHit[]> = new Map()
   _bggGameCache: Map<string, Game> = new Map()
-  bggDebounce: number = 2000
+  bggDebounce: number = 1500
   maxResults: number = 7
   maxFullResults: number = 50
 

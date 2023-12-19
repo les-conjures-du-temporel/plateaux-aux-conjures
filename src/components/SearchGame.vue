@@ -34,7 +34,7 @@ function filterGameSearch(term: string, doneFn: (callbackFn: () => void) => void
       const newItems: Item[] = []
 
       if (term) {
-        newItems.push({ label: 'Faire recherche', value: term, icon: SEARCH_ICON })
+        newItems.push({ label: 'Montrer tous les résultats', value: term, icon: SEARCH_ICON })
       }
 
       for (const result of results) {
@@ -47,9 +47,10 @@ function filterGameSearch(term: string, doneFn: (callbackFn: () => void) => void
 
       if (searchingBgg) {
         newItems.push({
-          label: 'recherche sur BGG en cours',
+          label: 'Recherche externe en cours',
           value: '',
-          disable: true
+          disable: true,
+          icon: 'pending'
         })
       }
 
@@ -98,6 +99,7 @@ function choseGame(game: Game): void {
     @filter="filterGameSearch"
     @filter-abort="abortGameSearch"
     v-if="state === 'input'"
+    dense
   >
     <template v-slot:option="scope">
       <q-item v-bind="scope.itemProps">
