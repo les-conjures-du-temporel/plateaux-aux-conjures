@@ -159,12 +159,13 @@ function addFavoriteGame(game: Game): void {
     <q-card>
       <q-tabs
         v-model="tab"
-        dense
         class="text-grey"
         active-color="primary"
         indicator-color="primary"
         align="justify"
         narrow-indicator
+        mobile-arrows
+        outside-arrows
       >
         <q-tab
           name="players"

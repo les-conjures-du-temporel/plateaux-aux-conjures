@@ -4,12 +4,12 @@ GET https://boardgamegeek.com/xmlapi2/collection?username=lesconjures&brief=1
 >>! bgg-collection.xml
 
 ### boardgame
-GET https://boardgamegeek.com/xmlapi2/things?id=204817,348554,287954&type=boardgame&versions=1&stats=1
+GET https://boardgamegeek.com/xmlapi2/things?id=40849
 
 >>! bgg-boardgames.xml
 
 ### search
-GET https://boardgamegeek.com/xmlapi2/search?query=wonders&type=boardgame
+GET https://boardgamegeek.com/xmlapi/search?search=pandemic&type=boardgame
 
 >>! bgg-search.xml
 
