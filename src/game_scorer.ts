@@ -31,8 +31,7 @@ export class GameScorer {
   _db: Database
 
   // === Tweaks to the boosting logic ===
-  _playersRecommendedBoost: number = 0.25
-  _playersBestBoost: number = 0.5
+  _playersBoost: number = 0.5
   _playTimeBoost: number = 0.5
   _favoriteMatchBoost: number = 1
   _bggRatingBoost: number = 0.5

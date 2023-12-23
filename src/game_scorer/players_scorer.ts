@@ -8,6 +8,12 @@ import type { Game } from '@/database'
 export class PlayersScorer {
   // The minimum number of votes on a give question in order to consider its answers
   static _minimumVotes: number = 10
+  // The maximum number of players to consider when summarizing poll results.
+  // For example, when `10`, polls that end with a question like "more than 6" will have this answer applied to values
+  // from 7 through 10. Additionally, polls that have questions like "10", "11" and "more than 11" will have these 3
+  // answer combined into a "10". The valid answers will be averaged.
+  // This mechanism is used to give reasonable answers to difficult questions like: "is this game compatible with 7+
+  // players?". Both the question and the poll will have these unbounded intervals collapsed to a single value.
   static _maxPlayers: number = 10
   _scoreByGameAndPlayers: Map<string, Map<number, number>>
 
@@ -22,10 +28,12 @@ export class PlayersScorer {
 
   static _calculateScoreByPlayers(game: Game): Map<number, number> {
     const scoreByPlayers = new Map()
+    let maxPlayers = PlayersScorer._maxPlayers
 
     for (const poll of game.bgg.playersPolls) {
       const { bestVotes, recommendedVotes, notRecommendedVotes } = poll
       if (bestVotes + recommendedVotes + notRecommendedVotes < PlayersScorer._minimumVotes) {
+        // Not enough answers
         continue
       }
 
@@ -40,17 +48,18 @@ export class PlayersScorer {
 
       if (!poll.isMoreThan) {
         scoreByPlayers.set(poll.players, score)
+        maxPlayers = Math.max(maxPlayers, poll.players)
       } else {
+        // Spread the answer from `N+1` through `_maxPlayers`
         scoreByPlayers.set(poll.players + 1, score)
+        maxPlayers = Math.max(maxPlayers, poll.players + 1)
         for (let i = poll.players + 2; i <= PlayersScorer._maxPlayers; i++) {
           scoreByPlayers.set(i, score)
         }
       }
     }
 
-    console.log(new Map(scoreByPlayers.entries()))
-    const maxPlayers = Array.from(scoreByPlayers.keys()).reduce((a, b) => Math.max(a, b))
-    console.log(maxPlayers)
+    // Average answers above `_maxPlayers`
     let sum = 0
     let count = 0
     for (let i = PlayersScorer._maxPlayers; i <= maxPlayers; i++) {
@@ -58,12 +67,13 @@ export class PlayersScorer {
       if (score !== undefined) {
         sum += score
         count += 1
+        scoreByPlayers.delete(i)
       }
-      scoreByPlayers.delete(i)
     }
     if (count > 0) {
       scoreByPlayers.set(PlayersScorer._maxPlayers, sum / count)
     }
+
     return scoreByPlayers
   }
 
