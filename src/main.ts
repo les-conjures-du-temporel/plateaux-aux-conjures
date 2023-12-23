@@ -11,6 +11,8 @@ import quasarLang from 'quasar/lang/fr'
 import { Database } from '@/database'
 import router from '@/router'
 import { GameSeacher } from '@/game_searcher'
+import { PlayersScorer } from '@/game_scorer/players_scorer'
+import { resyncCollection } from '@/resync_collection'
 
 const app = createApp(App)
 

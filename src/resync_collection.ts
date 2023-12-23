@@ -3,12 +3,7 @@ import { boardGameGeekUser } from '@/config'
 import type { Database, Game } from '@/database'
 import { buildGameFromBggGame } from '@/helpers'
 
-interface Progress {
-  message: string
-  level: 'info' | 'warn'
-}
-
-export type ProgressCallback = (message: Progress) => void
+export type ProgressCallback = (message: string, level: 'info' | 'warn') => void
 
 /**
  * Updates the database with the games from the board game geek collection
@@ -17,7 +12,7 @@ export async function resyncCollection(db: Database, progressCallback: ProgressC
   // Extract current data from db
   const staleGamesList = await db.getGames()
   const staleGames = new Map(staleGamesList.map((game) => [game.bgg.id, game]))
-  progressCallback({ message: `Database currently has ${staleGames.size} items`, level: 'info' })
+  progressCallback(`Database currently has ${staleGames.size} items`, 'info')
 
   // Extract data from bgg
   const novelGameIds = new Set(
@@ -33,7 +28,7 @@ export async function resyncCollection(db: Database, progressCallback: ProgressC
   for (const id of allBggIds) {
     const bggGame = bggGames.get(id)
     if (!bggGame) {
-      progressCallback({ message: `Game ${id} was not found in BGG`, level: 'warn' })
+      progressCallback(`Game ${id} was not found in BGG`, 'warn')
       continue
     }
 
@@ -45,12 +40,12 @@ export async function resyncCollection(db: Database, progressCallback: ProgressC
     }
   }
 
-  progressCallback({
-    message: `Will insert ${gamesToAdd.length} and update ${gamesToUpdate.size} games`,
-    level: 'info'
-  })
+  progressCallback(
+    `Will insert ${gamesToAdd.length} and update ${gamesToUpdate.size} games`,
+    'info'
+  )
   await db.batchAdd(gamesToAdd)
   await db.batchUpdate(gamesToUpdate)
 
-  progressCallback({ message: 'Done', level: 'info' })
+  progressCallback('Done', 'info')
 }

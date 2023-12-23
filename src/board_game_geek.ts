@@ -6,7 +6,7 @@ const REQUEST_TIMEOUT = 10e3
 const EXPORT_COLLECTION_QUEUE_TIMEOUT = 120e3
 const EXPORT_COLLECTION_QUEUE_SLEEP = 2e3
 const GET_GAMES_BATCH_SIZE = 10
-const GET_GAMES_BATCH_SLEEP = 2e3
+const GET_GAMES_BATCH_SLEEP = 1e3
 
 /**
  * Represents a board game retrieved from BoardGameGeek API.
@@ -19,6 +19,7 @@ export interface BggGame {
   secondaryNames: string[]
   minPlayers: number | null
   maxPlayers: number | null
+  playersPolls: PlayersPoll[]
   minPlayTimeMinutes: number | null
   maxPlayTimeMinutes: number | null
   minAge: number | null
@@ -29,6 +30,21 @@ export interface BggGame {
   averageRating: number | null
   bayesAverageRating: number | null
   averageWeight: number | null
+}
+
+/**
+ * Represents the community answers to the pool of suggested number of players.
+ *
+ * The BGG site let users vote for different amount of players, whether they recommend or not playing this game with
+ * this many players. Each question has three possible answers: best, recommended, not recommended.
+ */
+export interface PlayersPoll {
+  players: number
+  // This is `true` when the question is about `more than ${players}`, usually the last question
+  isMoreThan: boolean
+  bestVotes: number
+  recommendedVotes: number
+  notRecommendedVotes: number
 }
 
 export async function listGameIdsInUserCollection(
@@ -46,7 +62,7 @@ export async function listGameIdsInUserCollection(
       break
     }
 
-    progressCallback({ message: 'BGG has queued request for user collection', level: 'info' })
+    progressCallback('BGG has queued request for user collection', 'info')
     await sleep(EXPORT_COLLECTION_QUEUE_SLEEP)
   }
 
@@ -68,10 +84,7 @@ export async function listGameIdsInUserCollection(
     }
   }
 
-  progressCallback({
-    message: `Listed ${gamesIds.length} board games from collection`,
-    level: 'info'
-  })
+  progressCallback(`Listed ${gamesIds.length} board games from collection`, 'info')
   return gamesIds
 }
 
@@ -86,22 +99,19 @@ export async function getGamesInBatches(
     }
     const subIds = ids.slice(i, i + GET_GAMES_BATCH_SIZE)
 
-    progressCallback({
-      message: `Will request ${subIds.length} more board games from BGG`,
-      level: 'info'
-    })
+    progressCallback(`Will request ${subIds.length} more board games from BGG`, 'info')
     let newGames
     try {
       newGames = await getGames(subIds, progressCallback)
     } catch (error) {
-      progressCallback({ message: `Failed with ${error}. Will retry`, level: 'warn' })
+      progressCallback(`Failed with ${error}. Will retry`, 'warn')
       await sleep(GET_GAMES_BATCH_SLEEP)
       newGames = await getGames(subIds, progressCallback)
     }
     games.push(...newGames)
   }
 
-  progressCallback({ message: `Successfully extracted ${games.length} board games`, level: 'info' })
+  progressCallback(`Successfully extracted ${games.length} board games`, 'info')
   return games
 }
 
@@ -164,22 +174,23 @@ async function getGames(ids: string[], progressCallback: ProgressCallback): Prom
   const xmlDoc = parser.parseFromString(data, 'text/xml')
 
   for (const gameEl of Array.from(xmlDoc.getElementsByTagName('item'))) {
-    const game = parseGameElement(gameEl)
-    if (game) {
-      games.push(game)
+    try {
+      games.push(parseGameElement(gameEl, progressCallback))
+    } catch (error) {
+      progressCallback(`Failed to extract data for board game: ${error}`, 'warn')
     }
   }
 
   for (const id of ids) {
     if (!games.some((game) => game.id === id)) {
-      progressCallback({ message: `Failed to extract data for board game ${id}`, level: 'warn' })
+      progressCallback(`Could not find data for board game ${id}`, 'warn')
     }
   }
 
   return games
 }
 
-function parseGameElement(gameEl: Element): BggGame | null {
+function parseGameElement(gameEl: Element, progressCallback: ProgressCallback): BggGame {
   function extractString(text: string | undefined | null): string | null {
     if (!text) {
       return null
@@ -212,11 +223,14 @@ function parseGameElement(gameEl: Element): BggGame | null {
 
   const gameId = gameEl.getAttribute('id')
   if (!gameId) {
-    return null
+    throw Error('Missing game id')
   }
   const primaryName = extractString(
     gameEl.querySelector('name[type="primary"]')?.getAttribute('value')
   )
+
+  const pollEl = gameEl.querySelector('poll[name=suggested_numplayers]')
+  const playersPolls = pollEl ? parsePlayersPolls(pollEl, progressCallback) : []
 
   return {
     id: gameId,
@@ -225,6 +239,7 @@ function parseGameElement(gameEl: Element): BggGame | null {
     secondaryNames: extractStrings(gameEl.querySelectorAll('name[type="alternate"]')),
     minPlayers: extractNumber(gameEl.querySelector('minplayers')),
     maxPlayers: extractNumber(gameEl.querySelector('maxplayers')),
+    playersPolls,
     minPlayTimeMinutes: extractNumber(gameEl.querySelector('minplaytime')),
     maxPlayTimeMinutes: extractNumber(gameEl.querySelector('maxplaytime')),
     minAge: extractNumber(gameEl.querySelector('minage')),
@@ -235,5 +250,46 @@ function parseGameElement(gameEl: Element): BggGame | null {
     averageRating: extractNumber(gameEl.querySelector('statistics > ratings > average')),
     bayesAverageRating: extractNumber(gameEl.querySelector('statistics > ratings > bayesaverage')),
     averageWeight: extractNumber(gameEl.querySelector('statistics > ratings > averageweight'))
+  }
+}
+
+function parsePlayersPolls(pollEl: Element, progress: ProgressCallback): PlayersPoll[] {
+  const results = []
+  for (const resultEl of pollEl.querySelectorAll('results')) {
+    try {
+      results.push(parsePlayersPoll(resultEl))
+    } catch (error) {
+      progress(`Failed to parse players poll: ${error}`, 'warn')
+    }
+  }
+  return results
+}
+
+function parsePlayersPoll(resultEl: Element): PlayersPoll {
+  const numPlayersText = resultEl.getAttribute('numplayers')
+  if (!numPlayersText) {
+    throw Error('Missing numplayers')
+  }
+
+  const isMoreThan = numPlayersText.endsWith('+')
+  const players = Number.parseInt(isMoreThan ? numPlayersText.slice(0, -1) : numPlayersText)
+
+  const bestVotesText = resultEl.querySelector('result[value=Best]')?.getAttribute('numvotes')
+  const recommendedVotesText = resultEl
+    .querySelector('result[value=Recommended]')
+    ?.getAttribute('numvotes')
+  const notRecommendedVotesText = resultEl
+    .querySelector('result[value="Not Recommended"]')
+    ?.getAttribute('numvotes')
+  const bestVotes = Number.parseInt(bestVotesText || '0')
+  const recommendedVotes = Number.parseInt(recommendedVotesText || '0')
+  const notRecommendedVotes = Number.parseInt(notRecommendedVotesText || '0')
+
+  return {
+    players,
+    isMoreThan,
+    bestVotes,
+    recommendedVotes,
+    notRecommendedVotes
   }
 }

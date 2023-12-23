@@ -1,4 +1,0 @@
-GET https://boardgamegeek.com/xmlapi2/collection?username=lesconjures&stats=1&own=1
-
-###
-GET https://boardgamegeek.com/xmlapi2/thing?id=251678&stats=1
