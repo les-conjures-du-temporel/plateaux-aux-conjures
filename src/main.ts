@@ -5,14 +5,11 @@ import 'quasar/src/css/index.sass'
 import './assets/main.css'
 
 import App from './App.vue'
-import { createApp } from 'vue'
+import { createApp, type Ref, ref } from 'vue'
 import { Quasar } from 'quasar'
 import quasarLang from 'quasar/lang/fr'
-import { Database } from '@/database'
+import { Database, type Game } from '@/database'
 import router from '@/router'
-import { GameSeacher } from '@/game_searcher'
-import { PlayersScorer } from '@/game_scorer/players_scorer'
-import { resyncCollection } from '@/resync_collection'
 
 const app = createApp(App)
 
@@ -23,7 +20,18 @@ app.use(Quasar, {
 })
 
 const db = new Database()
+const games: Ref<Game[]> = ref([])
+
 app.provide('db', db)
-app.provide('gameSearcher', new GameSeacher(db))
+app.provide('games', games)
 
 app.mount('#app')
+
+// Preload games
+db.getGames()
+  .then((loadedGames) => {
+    games.value = loadedGames
+  })
+  .catch((error) => {
+    console.error(`Failed to load games: ${error}`)
+  })

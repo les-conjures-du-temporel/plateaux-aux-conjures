@@ -1,6 +1,6 @@
 import type { Game } from '@/database'
 
-type Interval = [number, number]
+export type Interval = [number, number]
 
 /**
  * Score games based on the likelihood that they respect the play time requested

@@ -1,22 +1,27 @@
-import type { Database, Game } from '@/database'
+import type { Game } from '@/database'
 import type { BggSearchHit } from '@/board_game_geek'
-import { buildGameFromBggGame, normalizeClubCode, sleep } from '@/helpers'
 import { getGamesInBatches, searchGames } from '@/board_game_geek'
+import { buildGameFromBggGame, normalizeClubCode, sleep } from '@/helpers'
+import type { ComputedRef, Ref } from 'vue'
+import { computed } from 'vue'
 
 export type SearchHit = { id: string; name: string; ownedByClub: boolean }
 export type SearchResultsCallback = (hits: SearchHit[], searchingBgg: boolean) => void
 
-export class GameSeacher {
-  _db: Database
-  _localGames: { text: string; game: Game }[] | null = null
+export class GameSearcher {
+  _games: Ref<Game[]>
+  _localGames: ComputedRef<{ text: string; game: Game }[]>
   _bggSearchCache: Map<string, BggSearchHit[]> = new Map()
   _bggGameCache: Map<string, Game> = new Map()
-  bggDebounce: number = 1500
+  bggDebounce: number = 1000
   maxResults: number = 7
   maxFullResults: number = 40
 
-  constructor(db: Database) {
-    this._db = db
+  constructor(games: Ref<Game[]>) {
+    this._games = games
+    this._localGames = computed(() => {
+      return GameSearcher._calculateLocalGames(games.value)
+    })
   }
 
   /**
@@ -34,90 +39,88 @@ export class GameSeacher {
     abortSignal: AbortSignal,
     resultsCallback: SearchResultsCallback
   ): void {
-    const normalizedTerm = GameSeacher._normalizeText(term)
+    const normalizedTerm = GameSearcher._normalizeText(term)
 
-    this._loadLocalGames().then((localGames) => {
-      const hitIds = new Set()
-      const hits: SearchHit[] = []
+    const localGames = this._localGames.value
+    const hitIds = new Set()
+    const hits: SearchHit[] = []
 
-      const clubCode = normalizeClubCode(term)
-      if (clubCode) {
-        for (const localGame of localGames) {
-          if (localGame.game.clubCode === clubCode) {
-            const gameId = localGame.game.bgg.id
-            hits.push({
-              name: localGame.game.name,
-              id: gameId,
-              ownedByClub: localGame.game.ownedByClub
-            })
-            hitIds.add(gameId)
-            break
-          }
-        }
-      }
-
+    const clubCode = normalizeClubCode(term)
+    if (clubCode) {
       for (const localGame of localGames) {
-        const gameId = localGame.game.bgg.id
-        if (localGame.text.includes(normalizedTerm) && !hitIds.has(gameId)) {
+        if (localGame.game.clubCode === clubCode) {
+          const gameId = localGame.game.bgg.id
           hits.push({
             name: localGame.game.name,
             id: gameId,
             ownedByClub: localGame.game.ownedByClub
           })
           hitIds.add(gameId)
-        }
-
-        if (hits.length > this.maxResults) {
-          // Too many results, search is too broad
-          resultsCallback([], false)
-          return
+          break
         }
       }
+    }
 
-      if (hits.length === this.maxResults) {
-        // Don't do search on BGG
-        resultsCallback(hits, false)
+    for (const localGame of localGames) {
+      const gameId = localGame.game.bgg.id
+      if (localGame.text.includes(normalizedTerm) && !hitIds.has(gameId)) {
+        hits.push({
+          name: localGame.game.name,
+          id: gameId,
+          ownedByClub: localGame.game.ownedByClub
+        })
+        hitIds.add(gameId)
+      }
+
+      if (hits.length > this.maxResults) {
+        // Too many results, search is too broad
+        resultsCallback([], false)
         return
       }
+    }
 
-      // Dispatch search on BGG
-      resultsCallback(hits.slice(), true)
+    if (hits.length === this.maxResults) {
+      // Don't do search on BGG
+      resultsCallback(hits, false)
+      return
+    }
 
-      this._searchBgg(term, abortSignal)
-        .then((bggHits) => {
-          const idsOwnedByClub = new Set(
-            localGames.filter((game) => game.game.ownedByClub).map((game) => game.game.bgg.id)
-          )
+    // Dispatch search on BGG
+    resultsCallback(hits.slice(), true)
 
-          for (const bggHit of bggHits) {
-            if (!hitIds.has(bggHit.id)) {
-              hits.push({
-                name: bggHit.name,
-                id: bggHit.id,
-                ownedByClub: idsOwnedByClub.has(bggHit.id)
-              })
-              hitIds.add(bggHit.id)
-              if (hits.length >= this.maxResults) {
-                break
-              }
+    this._searchBgg(term, abortSignal)
+      .then((bggHits) => {
+        const idsOwnedByClub = new Set(
+          localGames.filter((game) => game.game.ownedByClub).map((game) => game.game.bgg.id)
+        )
+
+        for (const bggHit of bggHits) {
+          if (!hitIds.has(bggHit.id)) {
+            hits.push({
+              name: bggHit.name,
+              id: bggHit.id,
+              ownedByClub: idsOwnedByClub.has(bggHit.id)
+            })
+            hitIds.add(bggHit.id)
+            if (hits.length >= this.maxResults) {
+              break
             }
           }
+        }
 
-          resultsCallback(hits, false)
-        })
-        .catch((error) => {
-          console.warn(error)
-          resultsCallback(hits, false)
-        })
-    })
+        resultsCallback(hits, false)
+      })
+      .catch((error) => {
+        console.warn(error)
+        resultsCallback(hits, false)
+      })
   }
 
   /**
    * Do a full search using local and remote games
    */
   async doFullSearch(term: string) {
-    const games = await this._db.getGamesWithCache()
-    const gameById = new Map(games.map((game) => [game.bgg.id, game]))
+    const gameById = new Map(this._games.value.map((game) => [game.bgg.id, game]))
 
     const bggHits = await this._searchBgg(term, new AbortController().signal)
     bggHits.splice(this.maxFullResults, Number.MAX_SAFE_INTEGER)
@@ -151,8 +154,7 @@ export class GameSeacher {
    * Load the game information, from either the local db, local cache or BGG
    */
   async loadGame(id: string) {
-    const games = await this._db.getGamesWithCache()
-    for (const game of games) {
+    for (const game of this._games.value) {
       if (game.bgg.id === id) {
         return game
       }
@@ -194,18 +196,12 @@ export class GameSeacher {
     return bggHits
   }
 
-  async _loadLocalGames(): Promise<{ text: string; game: Game }[]> {
-    if (!this._localGames) {
-      const games = await this._db.getGamesWithCache()
-
-      this._localGames = games.map((game) => {
-        const names = [game.name, game.bgg.primaryName, ...game.bgg.secondaryNames]
-        const text = names.join(' ')
-        return { text: GameSeacher._normalizeText(text), game }
-      })
-    }
-
-    return this._localGames
+  static _calculateLocalGames(games: Game[]): { text: string; game: Game }[] {
+    return games.map((game) => {
+      const names = [game.name, game.bgg.primaryName, ...game.bgg.secondaryNames]
+      const text = names.join(' ')
+      return { text: GameSearcher._normalizeText(text), game }
+    })
   }
 
   /**

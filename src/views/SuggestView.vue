@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { inject, type Ref, ref, watch } from 'vue'
+import { computed, inject, type Ref, ref } from 'vue'
 import SearchGame from '@/components/SearchGame.vue'
-import { Database, type Game } from '@/database'
+import { type Game } from '@/database'
 import GameItem from '@/components/GameItem.vue'
-import { pluralS, sleep } from '@/helpers'
+import { pluralS } from '@/helpers'
 import { GameScorer } from '@/game_scorer'
 
 type Interval = [number, number]
 
-const db: Database = inject('db')!
+const games: Ref<Game[]> = inject('games')!
 const tab = ref('players')
 
 // Declare possible options
@@ -43,82 +43,68 @@ const criteriaAge: Ref<Interval | null> = ref(null)
 const criteriaWeight: Ref<Interval[]> = ref([])
 const criteriaFavoriteGames: Ref<Game[]> = ref([])
 
-type SuggestedGame = { game: Game; score: number }
-const suggestionResults: Ref<SuggestedGame[] | null> = ref(null)
-const loadingSuggestionResults: Ref<boolean> = ref(false)
-const tooManyResults: Ref<boolean> = ref(false)
+const gameScorer = computed(() => {
+  return new GameScorer(games.value)
+})
 
-const gameScorer = new GameScorer(db)
 const MAX_SUGGESTIONS = 25
 
-watch(
-  [criteriaPlayers, criteriaPlayTime, criteriaAge, criteriaWeight, criteriaFavoriteGames],
-  async () => {
-    if (
-      !criteriaPlayers.value.length &&
-      !criteriaPlayTime.value.length &&
-      !criteriaAge.value &&
-      !criteriaWeight.value.length &&
-      !criteriaFavoriteGames.value.length
-    ) {
-      suggestionResults.value = null
-      tooManyResults.value = false
-      return
-    }
-
-    const gamesPromise = db.getGamesWithCache()
-
-    // Show loading for a while
-    loadingSuggestionResults.value = true
-    suggestionResults.value = null
-    await sleep(200)
-
-    const games = await gamesPromise
-
-    // Apply restrictions
-    const favoriteGameIds = new Set(criteriaFavoriteGames.value.map((favorite) => favorite.bgg.id))
-    const validGames: Game[] = []
-    for (const game of games) {
-      if (!game.ownedByClub || favoriteGameIds.has(game.bgg.id)) {
-        continue
-      }
-
-      if (!checkCriteria([game.bgg.minPlayers, game.bgg.maxPlayers], criteriaPlayers.value)) {
-        continue
-      }
-
-      if (
-        !checkCriteria(
-          [game.bgg.minPlayTimeMinutes, game.bgg.maxPlayTimeMinutes],
-          criteriaPlayTime.value
-        )
-      ) {
-        continue
-      }
-
-      const age = criteriaAge.value ? [criteriaAge.value] : []
-      if (!checkCriteria([game.bgg.minAge, game.bgg.minAge], age)) {
-        continue
-      }
-
-      if (!checkCriteria([game.bgg.averageWeight, game.bgg.averageWeight], criteriaWeight.value)) {
-        continue
-      }
-
-      validGames.push(game)
-    }
-
-    const scoredGames = await gameScorer.scoreGames(validGames, criteriaFavoriteGames.value)
-    scoredGames.sort((a, b) => b.score - a.score)
-
-    suggestionResults.value = scoredGames.slice(0, MAX_SUGGESTIONS)
-    loadingSuggestionResults.value = false
-    tooManyResults.value = scoredGames.length > MAX_SUGGESTIONS
-  },
-  {
-    deep: true
+const suggestionResults = computed(() => {
+  if (
+    !criteriaPlayers.value.length &&
+    !criteriaPlayTime.value.length &&
+    !criteriaAge.value &&
+    !criteriaWeight.value.length &&
+    !criteriaFavoriteGames.value.length
+  ) {
+    return null
   }
-)
+
+  // Apply restrictions
+  const favoriteGameIds = new Set(criteriaFavoriteGames.value.map((favorite) => favorite.bgg.id))
+  const validGames: Game[] = []
+  for (const game of games.value) {
+    if (!game.ownedByClub || favoriteGameIds.has(game.bgg.id)) {
+      continue
+    }
+
+    if (!checkCriteria([game.bgg.minPlayers, game.bgg.maxPlayers], criteriaPlayers.value)) {
+      continue
+    }
+
+    if (
+      !checkCriteria(
+        [game.bgg.minPlayTimeMinutes, game.bgg.maxPlayTimeMinutes],
+        criteriaPlayTime.value
+      )
+    ) {
+      continue
+    }
+
+    const age = criteriaAge.value ? [criteriaAge.value] : []
+    if (!checkCriteria([game.bgg.minAge, game.bgg.minAge], age)) {
+      continue
+    }
+
+    if (!checkCriteria([game.bgg.averageWeight, game.bgg.averageWeight], criteriaWeight.value)) {
+      continue
+    }
+
+    validGames.push(game)
+  }
+
+  const playersSet: Set<number> = new Set()
+  for (const [lower] of criteriaPlayers.value) {
+    playersSet.add(lower)
+  }
+
+  return gameScorer.value.score(
+    validGames,
+    criteriaFavoriteGames.value,
+    playersSet,
+    criteriaPlayTime.value
+  )
+})
 
 /**
  * Check if at least one of the criteria is respected, that is, there is a non-empty intersection
@@ -274,21 +260,30 @@ function addFavoriteGame(game: Game): void {
     </q-card>
   </div>
 
-  <div class="text-center" v-if="loadingSuggestionResults">
-    <q-spinner color="primary" size="3em" />
-  </div>
-
   <div class="q-ma-md" v-if="suggestionResults">
     <q-banner class="bg-secondary text-white" v-if="!suggestionResults.length">
       Aucun résultat n'a été trouvé. Essaye de changer les critères de la recherche
     </q-banner>
 
     <div v-else>
-      <p v-if="tooManyResults">Voici les {{ suggestionResults.length }} meilleures suggéstions</p>
+      <p v-if="suggestionResults.length > MAX_SUGGESTIONS">
+        Voici les {{ MAX_SUGGESTIONS }} meilleures suggéstions
+      </p>
       <p v-else>Voici {{ pluralS(suggestionResults.length, 'suggéstion') }}</p>
 
-      <template v-for="(suggestion, index) in suggestionResults" :key="suggestion.game.bgg.id">
+      <template
+        v-for="(suggestion, index) in suggestionResults.slice(0, MAX_SUGGESTIONS)"
+        :key="suggestion.game.bgg.id"
+      >
         <q-separator v-if="index > 0" color="secondary" />
+        <div>
+          playersScore = {{ suggestion.playersScore }}, playTimeScore =
+          {{ suggestion.playTimeScore }}, favoriteMatchScore = {{ suggestion.favoriteMatchScore }},
+          bggRatingScore = {{ suggestion.bggRatingScore }}, randomDailyScore =
+          {{ suggestion.randomDailyScore }}, recentlyPlayedScore =
+          {{ suggestion.recentlyPlayedScore }}, score = {{ suggestion.score }}, relevantScores =
+          {{ suggestion.relevantScores }},
+        </div>
         <game-item :game="suggestion.game" />
       </template>
     </div>

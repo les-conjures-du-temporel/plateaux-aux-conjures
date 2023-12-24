@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { inject, ref, type Ref, watch } from 'vue'
-import { GameSeacher } from '@/game_searcher'
+import { GameSearcher } from '@/game_searcher'
 import type { Game } from '@/database'
 import GameItem from '@/components/GameItem.vue'
 
@@ -8,10 +8,12 @@ const emit = defineEmits<{
   input: [input: Game]
 }>()
 
-const gameSearcher: GameSeacher = inject('gameSearcher')!
+const games: Ref<Game[]> = inject('games')!
 const selectedItem: Ref<Item | null> = ref(null)
 const state: Ref<'input' | 'full-search' | 'loading'> = ref('input')
 const fullSearchResults: Ref<Game[]> = ref([])
+
+const gameSearcher = new GameSearcher(games)
 
 type Item = {
   label: string

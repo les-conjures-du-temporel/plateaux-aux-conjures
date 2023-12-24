@@ -50,6 +50,7 @@ export class Database {
 
   // Return all the games from the database, caching the response.
   // The cache is re-evaluated every minute
+  // TODO: deprecate this method in favor of Vue reactive injected
   async getGamesWithCache(): Promise<Game[]> {
     const expiration = 60e3
     if (
