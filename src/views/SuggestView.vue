@@ -297,7 +297,11 @@ function addFavoriteGame(game: Game): void {
         :key="suggestion.game.bgg.id"
       >
         <q-separator v-if="index > 0" color="secondary" />
-        <game-item :game="suggestion.game" :highlights="highlights" />
+        <game-item
+          :game="suggestion.game"
+          :highlights="highlights"
+          :relevant-scores="suggestion.relevantScores"
+        />
       </template>
     </div>
   </div>

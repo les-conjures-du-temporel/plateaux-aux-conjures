@@ -3,6 +3,7 @@ import type { Game } from '@/database'
 import { computed, ref } from 'vue'
 import { formatDate, formatNumber, pluralS } from '@/helpers'
 import GameItemTerms from '@/components/GameItemTerms.vue'
+import type { ScoreKind } from '@/game_scorer'
 
 export type Highlights = {
   categories: Set<string>
@@ -14,6 +15,7 @@ export type Highlights = {
 const props = defineProps<{
   game: Game
   highlights?: Highlights
+  relevantScores?: ScoreKind[]
 }>()
 
 const showDetails = ref(false)
@@ -52,6 +54,28 @@ const weight = computed(() => {
     return 'jeu intermédiaire'
   }
 })
+
+function getIconForScoreKind(scoreKind: ScoreKind): string {
+  return {
+    players: 'groups',
+    playTime: 'schedule',
+    favoriteMatch: 'thumb_up',
+    bggRating: 'star',
+    randomDaily: 'assistant',
+    recentlyPlayed: 'share'
+  }[scoreKind]
+}
+
+function getLabelForScoreKind(scoreKind: ScoreKind): string {
+  return {
+    players: 'recommandé pour ce nombre de joueurs',
+    playTime: 'probablement dans le temps demandé',
+    favoriteMatch: 'similaire aux jeux favoris',
+    bggRating: 'une bonne note sur BGG',
+    randomDaily: 'choix aléatoire du jour',
+    recentlyPlayed: 'joué récemment'
+  }[scoreKind]
+}
 </script>
 
 <template>
@@ -76,7 +100,13 @@ const weight = computed(() => {
 
         <div class="row">
           <div class="col-6">
-            <span v-if="game.ownedByClub">jeu du club</span>
+            <q-icon
+              v-for="scoreKind in relevantScores"
+              :key="scoreKind"
+              :name="getIconForScoreKind(scoreKind)"
+              class="q-mx-xs"
+              size="1.25em"
+            />
           </div>
           <div class="col-6">
             <q-btn
@@ -98,46 +128,73 @@ const weight = computed(() => {
       @enter="(element) => ((element as HTMLElement).style.height = `${element.scrollHeight}px`)"
       @leave="(element) => ((element as HTMLElement).style.height = '0px')"
     >
-      <q-card-section v-if="showDetails" class="q-pa-xs">
+      <q-card-section v-if="showDetails" class="q-pa-xs details-grid-container">
+        <template v-if="relevantScores?.length">
+          <div>Bon match</div>
+          <div>
+            <template v-for="(scoreKind, index) in relevantScores" :key="scoreKind">
+              <br v-if="index > 0" />
+              <q-icon :name="getIconForScoreKind(scoreKind)" class="q-mx-xs" size="1.25em" />
+              {{ getLabelForScoreKind(scoreKind) }}
+            </template>
+          </div>
+        </template>
+
         <game-item-terms
           :highlights="highlights?.categories"
           :terms="game.bgg.categories"
           label="Catégories"
         />
+
         <game-item-terms
           :highlights="highlights?.mechanics"
           :terms="game.bgg.mechanics"
           label="Mécaniques"
         />
+
         <game-item-terms
           :highlights="highlights?.designers"
           :terms="game.bgg.designers"
           label="Créateurs"
         />
+
         <game-item-terms
           :highlights="highlights?.artists"
           :terms="game.bgg.artists"
           label="Artistes"
         />
-        <span v-if="game.bgg.averageRating">
-          <q-badge>Note</q-badge> {{ formatNumber(game.bgg.averageRating) }} / 10<br />
-        </span>
-        <span v-if="game.bgg.averageWeight">
-          <q-badge>Complexité</q-badge> {{ formatNumber(game.bgg.averageWeight) }} / 5<br />
-        </span>
-        <span v-if="game.clubCode">
-          <q-badge>Code conjuré</q-badge> {{ game.clubCode }}<br />
-        </span>
-        <span v-if="game.lastPlayed">
-          <q-badge>Parties enregistrées</q-badge> {{ game.totalPlays }}<br />
-          <q-badge>Dernière partie</q-badge> {{ formatDate(game.lastPlayed) }}<br />
-        </span>
-        Aller à la page sur
-        <a
-          :href="'https://boardgamegeek.com/boardgame/' + encodeURIComponent(game.bgg.id)"
-          target="_blank"
-          >boardgamegeek.com</a
-        >
+
+        <template v-if="game.bgg.averageRating">
+          <div>Note</div>
+          <div>{{ formatNumber(game.bgg.averageRating) }} / 10</div>
+        </template>
+
+        <template v-if="game.bgg.averageWeight">
+          <div>Complexité</div>
+          <div>{{ formatNumber(game.bgg.averageWeight) }} / 5</div>
+        </template>
+
+        <template v-if="game.clubCode">
+          <div>Code conjuré</div>
+          <div>{{ game.clubCode }}</div>
+        </template>
+
+        <template v-if="game.lastPlayed">
+          <div>Parties enregistrées</div>
+          <div>{{ game.totalPlays }}</div>
+          <div>Dernière partie</div>
+          <div>{{ formatDate(game.lastPlayed) }}</div>
+        </template>
+
+        <div>Plus d'info</div>
+        <div>
+          Aller sur
+          <a
+            :href="'https://boardgamegeek.com/boardgame/' + encodeURIComponent(game.bgg.id)"
+            target="_blank"
+            >boardgamegeek.com</a
+          >
+        </div>
       </q-card-section>
     </transition>
   </q-card>
@@ -153,5 +210,11 @@ const weight = computed(() => {
 .expand-enter-from,
 .expand-leave-to {
   height: 0;
+}
+
+.details-grid-container {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  grid-gap: 5px;
 }
 </style>
