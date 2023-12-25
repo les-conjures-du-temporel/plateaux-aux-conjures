@@ -2,9 +2,18 @@
 import type { Game } from '@/database'
 import { computed, ref } from 'vue'
 import { formatDate, formatNumber, pluralS } from '@/helpers'
+import GameItemTerms from '@/components/GameItemTerms.vue'
+
+export type Highlights = {
+  categories: Set<string>
+  mechanics: Set<string>
+  designers: Set<string>
+  artists: Set<string>
+}
 
 const props = defineProps<{
   game: Game
+  highlights?: Highlights
 }>()
 
 const showDetails = ref(false)
@@ -90,18 +99,26 @@ const weight = computed(() => {
       @leave="(element) => ((element as HTMLElement).style.height = '0px')"
     >
       <q-card-section v-if="showDetails" class="q-pa-xs">
-        <span v-if="game.bgg.categories.length">
-          <q-badge>Catégories</q-badge> {{ game.bgg.categories.join(', ') }}<br />
-        </span>
-        <span v-if="game.bgg.mechanics.length">
-          <q-badge>Mécaniques</q-badge> {{ game.bgg.mechanics.join(', ') }}<br />
-        </span>
-        <span v-if="game.bgg.designers.length">
-          <q-badge>Créateurs</q-badge> {{ game.bgg.designers.join(', ') }}<br />
-        </span>
-        <span v-if="game.bgg.artists.length">
-          <q-badge>Artistes</q-badge> {{ game.bgg.artists.join(', ') }}<br />
-        </span>
+        <game-item-terms
+          :highlights="highlights?.categories"
+          :terms="game.bgg.categories"
+          label="Catégories"
+        />
+        <game-item-terms
+          :highlights="highlights?.mechanics"
+          :terms="game.bgg.mechanics"
+          label="Mécaniques"
+        />
+        <game-item-terms
+          :highlights="highlights?.designers"
+          :terms="game.bgg.designers"
+          label="Créateurs"
+        />
+        <game-item-terms
+          :highlights="highlights?.artists"
+          :terms="game.bgg.artists"
+          label="Artistes"
+        />
         <span v-if="game.bgg.averageRating">
           <q-badge>Note</q-badge> {{ formatNumber(game.bgg.averageRating) }} / 10<br />
         </span>
@@ -110,8 +127,6 @@ const weight = computed(() => {
         </span>
         <span v-if="game.clubCode">
           <q-badge>Code conjuré</q-badge> {{ game.clubCode }}<br />
-          <span class="text-caption">(utile pour enregistrer tes parties rapidement)</span>
-          <br />
         </span>
         <span v-if="game.lastPlayed">
           <q-badge>Parties enregistrées</q-badge> {{ game.totalPlays }}<br />

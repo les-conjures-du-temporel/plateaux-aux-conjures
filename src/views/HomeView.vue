@@ -1,23 +1,10 @@
 <script setup lang="ts">
 import { ref, inject, type Ref } from 'vue'
-import type { Database, Game } from '@/database'
+import type { Game } from '@/database'
 import GameItem from '@/components/GameItem.vue'
 
-const db: Database = inject('db')!
-
-const isLoading = ref(true)
-const games: Ref<Game[]> = ref([])
+const games: Ref<Game[]> = inject('games')!
 const loadError = ref(null)
-
-db.getGamesWithCache()
-  .then((result) => {
-    games.value = result
-    isLoading.value = false
-  })
-  .catch((error) => {
-    console.error(error)
-    loadError.value = error
-  })
 </script>
 
 <template>
@@ -57,7 +44,7 @@ db.getGamesWithCache()
       notre collection.
     </p>
 
-    <div class="text-center" v-if="isLoading">
+    <div class="text-center" v-if="games.length === 0">
       <q-spinner color="primary" size="5em" />
     </div>
 

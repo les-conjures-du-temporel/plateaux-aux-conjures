@@ -48,24 +48,9 @@ export class Database {
     this._firestore = getFirestore(firebaseApp)
   }
 
-  // Return all the games from the database, caching the response.
-  // The cache is re-evaluated every minute
-  // TODO: deprecate this method in favor of Vue reactive injected
-  async getGamesWithCache(): Promise<Game[]> {
-    const expiration = 60e3
-    if (
-      !this._gamesPromise ||
-      !this._gamesRefreshed ||
-      Date.now() - this._gamesRefreshed.getTime() > expiration
-    ) {
-      this._gamesPromise = this.getGames()
-      this._gamesRefreshed = new Date()
-    }
-
-    return this._gamesPromise
-  }
-
-  // Return all the games from the database
+  /**
+   * Return all the games from the database
+   */
   async getGames() {
     const gameQuerySnapshot = await getDocs(collection(this._firestore, 'games'))
     return gameQuerySnapshot.docs.map((doc) => doc.data() as Game)

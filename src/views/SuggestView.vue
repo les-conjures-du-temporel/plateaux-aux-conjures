@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, inject, type Ref, ref } from 'vue'
+import { computed, type ComputedRef, inject, type Ref, ref } from 'vue'
 import SearchGame from '@/components/SearchGame.vue'
 import { type Game } from '@/database'
-import GameItem from '@/components/GameItem.vue'
+import GameItem, { type Highlights } from '@/components/GameItem.vue'
 import { pluralS } from '@/helpers'
 import { GameScorer } from '@/game_scorer'
 
@@ -45,6 +45,27 @@ const criteriaFavoriteGames: Ref<Game[]> = ref([])
 
 const gameScorer = computed(() => {
   return new GameScorer(games.value)
+})
+
+const highlights: ComputedRef<Highlights> = computed(() => {
+  const games = criteriaFavoriteGames.value
+
+  function collect(games: Game[], getter: (game: Game) => string[]): Set<string> {
+    const values: Set<string> = new Set()
+    for (const game of games) {
+      for (const value of getter(game)) {
+        values.add(value)
+      }
+    }
+    return values
+  }
+
+  return {
+    categories: collect(games, (game) => game.bgg.categories),
+    mechanics: collect(games, (game) => game.bgg.mechanics),
+    designers: collect(games, (game) => game.bgg.designers),
+    artists: collect(games, (game) => game.bgg.artists)
+  }
 })
 
 const MAX_SUGGESTIONS = 25
@@ -276,17 +297,7 @@ function addFavoriteGame(game: Game): void {
         :key="suggestion.game.bgg.id"
       >
         <q-separator v-if="index > 0" color="secondary" />
-        <div>
-          playersScore = {{ suggestion.playersScore.toFixed(2) }}<br />
-          playTimeScore = {{ suggestion.playTimeScore.toFixed(2) }}<br />
-          favoriteMatchScore = {{ suggestion.favoriteMatchScore.toFixed(2) }}<br />
-          bggRatingScore = {{ suggestion.bggRatingScore.toFixed(2) }}<br />
-          randomDailyScore = {{ suggestion.randomDailyScore.toFixed(2) }}<br />
-          recentlyPlayedScore = {{ suggestion.recentlyPlayedScore.toFixed(2) }}<br />
-          score = {{ suggestion.score.toFixed(2) }}<br />
-          relevantScores = {{ suggestion.relevantScores }}
-        </div>
-        <game-item :game="suggestion.game" />
+        <game-item :game="suggestion.game" :highlights="highlights" />
       </template>
     </div>
   </div>
