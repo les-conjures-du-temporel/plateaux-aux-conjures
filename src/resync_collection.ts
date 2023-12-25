@@ -1,4 +1,4 @@
-import { getGamesInBatches, listGameIdsInUserCollection } from '@/board_game_geek'
+import { getGamesInBatches, listGamesInUserCollection } from '@/board_game_geek'
 import { boardGameGeekUser } from '@/config'
 import type { Database, Game } from '@/database'
 import { buildGameFromBggGame } from '@/helpers'
@@ -15,10 +15,9 @@ export async function resyncCollection(db: Database, progressCallback: ProgressC
   progressCallback(`Database currently has ${staleGames.size} items`, 'info')
 
   // Extract data from bgg
-  const novelGameIds = new Set(
-    await listGameIdsInUserCollection(boardGameGeekUser, progressCallback)
-  )
-  const allBggIds = new Set([...staleGames.keys(), ...novelGameIds])
+  const novelGames = await listGamesInUserCollection(boardGameGeekUser, progressCallback)
+  const novelGameById = new Map(novelGames.map((game) => [game.id, game]))
+  const allBggIds = new Set([...staleGames.keys(), ...novelGameById.keys()])
   const bggGamesList = await getGamesInBatches(Array.from(allBggIds), progressCallback)
   const bggGames = new Map(bggGamesList.map((game) => [game.id, game]))
 
@@ -33,10 +32,15 @@ export async function resyncCollection(db: Database, progressCallback: ProgressC
     }
 
     const staleGame = staleGames.get(id)
+    const novelGameName = novelGameById.get(id)?.name
     if (!staleGame) {
-      gamesToAdd.push(buildGameFromBggGame(bggGame, true))
+      gamesToAdd.push(buildGameFromBggGame(bggGame, true, novelGameName))
     } else {
-      gamesToUpdate.set(id, { bgg: bggGame, ownedByClub: novelGameIds.has(id) })
+      gamesToUpdate.set(id, {
+        bgg: bggGame,
+        ownedByClub: novelGameById.has(id),
+        name: novelGameName || staleGame.name
+      })
     }
   }
 

@@ -42,12 +42,12 @@ export class GameScorer {
   _recentlyPlayedScorer: RecentlyPlayedScorer
 
   // === Tweaks to the boosting logic ===
-  _bggRatingBoost: number = 0.25
-  _favoriteMatchBoost: number = 10
+  _bggRatingBoost: number = 0.2
+  _favoriteMatchBoost: number = 1
   _playTimeBoost: number = 0.5
   _playersBoost: number = 0.5
   _randomDailyBoost: number = 0.25
-  _recentlyPlayedBoost: number = 0.5
+  _recentlyPlayedBoost: number = 0.25
 
   // Mark this amount of the top percentage in each score
   _relevancyPercentile: number = 20
@@ -88,6 +88,11 @@ export class GameScorer {
       const playersScore = playersScoreByGame.get(gameId) || 0
       const randomDailyScore = randomDailyScoreByGame.get(gameId) || 0
       const recentlyPlayedScore = recentlyPlayedScoreByGame.get(gameId) || 0
+
+      if (favoriteGames.length > 0 && favoriteMatchScore === 0) {
+        // Ignore games that have nothing in common
+        continue
+      }
 
       const score =
         bggRatingScore * this._bggRatingBoost +
@@ -130,6 +135,7 @@ export class GameScorer {
     getValue: (game: ScoredGame) => number
   ): void {
     const sortedScores = scoredGames.map(getValue).sort((a, b) => a - b)
+    console.log(`${kind}: min=${sortedScores[0]}, max=${sortedScores[sortedScores.length - 1]}`)
     const relevancyIndex = Math.floor(
       (sortedScores.length - 1) * (1 - this._relevancyPercentile / 100)
     )

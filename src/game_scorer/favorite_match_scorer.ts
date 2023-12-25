@@ -22,16 +22,14 @@ export class FavoriteMatchScorer {
     const favoriteTerms = new Map()
     for (const favoriteGame of favoriteGames) {
       for (const term of FavoriteMatchScorer._getTermsForGame(favoriteGame)) {
-        favoriteTerms.set(term, weightByTerm.get(term) || 0)
+        const termWeight = weightByTerm.get(term) || 0
+        const previousValue = favoriteTerms.get(term) || 0
+        favoriteTerms.set(term, previousValue + termWeight)
       }
     }
 
     let maximumScore = 0
-    for (const weight of favoriteTerms.values()) {
-      maximumScore += weight
-    }
-
-    const scoredGames = new Map()
+    const rawScoredGames = new Map()
     for (const game of games) {
       let rawScore = 0
       const gameTerms = termsByGame.get(game.bgg.id)
@@ -46,7 +44,16 @@ export class FavoriteMatchScorer {
         }
       }
 
-      scoredGames.set(game.bgg.id, rawScore / maximumScore)
+      maximumScore = Math.max(maximumScore, rawScore)
+      rawScoredGames.set(game.bgg.id, rawScore)
+    }
+
+    if (maximumScore === 0) {
+      maximumScore = 1
+    }
+    const scoredGames = new Map()
+    for (const [gameId, rawScore] of rawScoredGames) {
+      scoredGames.set(gameId, rawScore / maximumScore)
     }
 
     return scoredGames

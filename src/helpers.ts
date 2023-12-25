@@ -53,13 +53,13 @@ export function normalizeClubCode(text: string): string | null {
   return null
 }
 
-export function buildGameFromBggGame(bggGame: BggGame, ownedByClub: boolean): Game {
+export function buildGameFromBggGame(bggGame: BggGame, ownedByClub: boolean, name?: string): Game {
   return {
     bgg: bggGame,
     ownedByClub,
     clubCode: ownedByClub ? generateClubCode() : null,
     lastPlayed: null,
-    name: bggGame.primaryName,
+    name: name || bggGame.primaryName,
     totalPlays: 0
   }
 }

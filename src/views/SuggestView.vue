@@ -277,12 +277,14 @@ function addFavoriteGame(game: Game): void {
       >
         <q-separator v-if="index > 0" color="secondary" />
         <div>
-          playersScore = {{ suggestion.playersScore }}, playTimeScore =
-          {{ suggestion.playTimeScore }}, favoriteMatchScore = {{ suggestion.favoriteMatchScore }},
-          bggRatingScore = {{ suggestion.bggRatingScore }}, randomDailyScore =
-          {{ suggestion.randomDailyScore }}, recentlyPlayedScore =
-          {{ suggestion.recentlyPlayedScore }}, score = {{ suggestion.score }}, relevantScores =
-          {{ suggestion.relevantScores }},
+          playersScore = {{ suggestion.playersScore.toFixed(2) }}<br />
+          playTimeScore = {{ suggestion.playTimeScore.toFixed(2) }}<br />
+          favoriteMatchScore = {{ suggestion.favoriteMatchScore.toFixed(2) }}<br />
+          bggRatingScore = {{ suggestion.bggRatingScore.toFixed(2) }}<br />
+          randomDailyScore = {{ suggestion.randomDailyScore.toFixed(2) }}<br />
+          recentlyPlayedScore = {{ suggestion.recentlyPlayedScore.toFixed(2) }}<br />
+          score = {{ suggestion.score.toFixed(2) }}<br />
+          relevantScores = {{ suggestion.relevantScores }}
         </div>
         <game-item :game="suggestion.game" />
       </template>

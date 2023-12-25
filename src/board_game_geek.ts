@@ -47,10 +47,10 @@ export interface PlayersPoll {
   notRecommendedVotes: number
 }
 
-export async function listGameIdsInUserCollection(
+export async function listGamesInUserCollection(
   username: string,
   progressCallback: ProgressCallback
-): Promise<string[]> {
+): Promise<{ id: string; name: string }[]> {
   const encodedUsername = encodeURIComponent(username)
   const apiUrl = `${BASE_URL}/collection?username=${encodedUsername}&brief=1&excludesubtype=boardgameexpansion`
   const start = Date.now()
@@ -76,16 +76,17 @@ export async function listGameIdsInUserCollection(
   const parser = new DOMParser()
   const xmlDoc = parser.parseFromString(data, 'text/xml')
 
-  const gamesIds = []
+  const games = []
   for (const element of Array.from(xmlDoc.getElementsByTagName('item'))) {
-    const gameId = element.getAttribute('objectid')
-    if (gameId) {
-      gamesIds.push(gameId)
+    const id = element.getAttribute('objectid')
+    const name = element.querySelector('name')?.textContent
+    if (id && name) {
+      games.push({ id, name })
     }
   }
 
-  progressCallback(`Listed ${gamesIds.length} board games from collection`, 'info')
-  return gamesIds
+  progressCallback(`Listed ${games.length} board games from collection`, 'info')
+  return games
 }
 
 export async function getGamesInBatches(
