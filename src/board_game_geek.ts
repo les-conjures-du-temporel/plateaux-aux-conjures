@@ -116,18 +116,46 @@ export async function getGamesInBatches(
   return games
 }
 
-export type BggSearchHit = { id: string; name: string }
+export interface BggSearchHit {
+  id: string
+  name: string
+  yearPublished?: string
+}
 
 export async function searchGames(term: string): Promise<BggSearchHit[]> {
   const encodedTerm = encodeURIComponent(term)
+
+  // Note that there is a bug (or feature) in the BGG api: even when requesting with `type=boardgame`, the API results
+  // expansions. Since we don't want to include expansions in the result, we do a separate parallels search asking only
+  // for expansions in order to remove them from the results
   const apiUrl = `${BASE_URL}/search?type=boardgame&query=${encodedTerm}`
-  const response = await fetchWithTimeout(apiUrl, REQUEST_TIMEOUT)
+  const apiExpansionUrl = `${BASE_URL}/search?type=boardgameexpansion&query=${encodedTerm}`
+  const [response, expansionResponse] = await Promise.all([
+    fetchWithTimeout(apiUrl, REQUEST_TIMEOUT),
+    fetchWithTimeout(apiExpansionUrl, REQUEST_TIMEOUT)
+  ])
 
   if (response.status !== 200) {
     throw new Error(`BGG responded with ${response.status}`)
   }
-  const data = await response.text()
+  if (expansionResponse.status !== 200) {
+    throw new Error(`BGG responded with ${expansionResponse.status}`)
+  }
 
+  // Parse expansion ids
+  const expansionIds = new Set()
+  const expansionsData = await expansionResponse.text()
+  const expansionsParser = new DOMParser()
+  const expansionsXmlDoc = expansionsParser.parseFromString(expansionsData, 'text/xml')
+  for (const gameEl of Array.from(expansionsXmlDoc.getElementsByTagName('item'))) {
+    const id = gameEl.getAttribute('id')
+    if (id) {
+      expansionIds.add(id)
+    }
+  }
+
+  // Parse game data, ignoring expansions
+  const data = await response.text()
   const parser = new DOMParser()
   const xmlDoc = parser.parseFromString(data, 'text/xml')
 
@@ -135,9 +163,10 @@ export async function searchGames(term: string): Promise<BggSearchHit[]> {
   for (const gameEl of Array.from(xmlDoc.getElementsByTagName('item'))) {
     const id = gameEl.getAttribute('id')
     const name = gameEl.querySelector('name')?.getAttribute('value')
+    const yearPublished = gameEl.querySelector('yearpublished')?.getAttribute('value') || undefined
 
-    if (id && name) {
-      searchHits.push({ id, name })
+    if (id && name && !expansionIds.has(id)) {
+      searchHits.push({ id, name, yearPublished })
     }
   }
 
