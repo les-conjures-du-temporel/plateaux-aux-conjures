@@ -10,7 +10,6 @@ import { Quasar } from 'quasar'
 import quasarLang from 'quasar/lang/fr'
 import { Database, type Game } from '@/database'
 import router from '@/router'
-import { resyncCollection } from '@/resync_collection'
 
 const app = createApp(App)
 

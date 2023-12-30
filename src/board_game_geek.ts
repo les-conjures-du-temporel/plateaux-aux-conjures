@@ -120,7 +120,7 @@ export async function getGamesInBatches(
 export interface BggSearchHit {
   id: string
   name: string
-  yearPublished?: string
+  yearPublished: number | null
 }
 
 export async function searchGames(term: string): Promise<BggSearchHit[]> {
@@ -164,7 +164,13 @@ export async function searchGames(term: string): Promise<BggSearchHit[]> {
   for (const gameEl of Array.from(xmlDoc.getElementsByTagName('item'))) {
     const id = gameEl.getAttribute('id')
     const name = gameEl.querySelector('name')?.getAttribute('value')
-    const yearPublished = gameEl.querySelector('yearpublished')?.getAttribute('value') || undefined
+    let yearPublished = null
+    try {
+      const yearText = gameEl.querySelector('yearpublished')?.getAttribute('value')
+      yearPublished = yearText ? Number.parseInt(yearText) : null
+    } catch (_) {
+      /* empty */
+    }
 
     if (id && name && !expansionIds.has(id)) {
       searchHits.push({ id, name, yearPublished })
@@ -222,36 +228,6 @@ async function getGames(ids: string[], progressCallback: ProgressCallback): Prom
 }
 
 function parseGameElement(gameEl: Element, progressCallback: ProgressCallback): BggGame {
-  function extractString(text: string | undefined | null): string | null {
-    if (!text) {
-      return null
-    }
-    return text.trim() || null
-  }
-
-  function extractNumber(element: Element | null): number | null {
-    const text = extractString(element?.getAttribute('value'))
-    if (!text) {
-      return null
-    }
-    try {
-      return Number.parseFloat(text)
-    } catch {
-      return null
-    }
-  }
-
-  function extractStrings(elements: NodeListOf<Element>): string[] {
-    const result = []
-    for (const element of Array.from(elements)) {
-      const text = extractString(element.getAttribute('value'))
-      if (text) {
-        result.push(text)
-      }
-    }
-    return result
-  }
-
   const gameId = gameEl.getAttribute('id')
   if (!gameId) {
     throw Error('Missing game id')
@@ -324,4 +300,34 @@ function parsePlayersPoll(resultEl: Element): PlayersPoll {
     recommendedVotes,
     notRecommendedVotes
   }
+}
+
+function extractString(text: string | undefined | null): string | null {
+  if (!text) {
+    return null
+  }
+  return text.trim() || null
+}
+
+function extractNumber(element: Element | null): number | null {
+  const text = extractString(element?.getAttribute('value'))
+  if (!text) {
+    return null
+  }
+  try {
+    return Number.parseFloat(text)
+  } catch {
+    return null
+  }
+}
+
+function extractStrings(elements: NodeListOf<Element>): string[] {
+  const result = []
+  for (const element of Array.from(elements)) {
+    const text = extractString(element.getAttribute('value'))
+    if (text) {
+      result.push(text)
+    }
+  }
+  return result
 }

@@ -5,7 +5,12 @@ import { buildGameFromBggGame, normalizeClubCode, sleep } from '@/helpers'
 import type { ComputedRef, Ref } from 'vue'
 import { computed } from 'vue'
 
-export type SearchHit = { id: string; name: string; ownedByClub: boolean }
+export interface SearchHit {
+  id: string
+  name: string
+  yearPublished: number | null
+  ownedByClub: boolean
+}
 export type SearchResultsCallback = (hits: SearchHit[], searchingBgg: boolean) => void
 
 export class GameSearcher {
@@ -52,6 +57,7 @@ export class GameSearcher {
           const gameId = localGame.game.bgg.id
           hits.push({
             name: localGame.game.name,
+            yearPublished: localGame.game.bgg.yearPublished,
             id: gameId,
             ownedByClub: localGame.game.ownedByClub
           })
@@ -66,6 +72,7 @@ export class GameSearcher {
       if (localGame.text.includes(normalizedTerm) && !hitIds.has(gameId)) {
         hits.push({
           name: localGame.game.name,
+          yearPublished: localGame.game.bgg.yearPublished,
           id: gameId,
           ownedByClub: localGame.game.ownedByClub
         })
@@ -88,7 +95,7 @@ export class GameSearcher {
     // Dispatch search on BGG
     resultsCallback(hits.slice(), true)
 
-    this._searchBgg(term, abortSignal)
+    this._searchBgg(term, abortSignal, this.bggDebounce)
       .then((bggHits) => {
         const idsOwnedByClub = new Set(
           localGames.filter((game) => game.game.ownedByClub).map((game) => game.game.bgg.id)
@@ -98,6 +105,7 @@ export class GameSearcher {
           if (!hitIds.has(bggHit.id)) {
             hits.push({
               name: bggHit.name,
+              yearPublished: bggHit.yearPublished,
               id: bggHit.id,
               ownedByClub: idsOwnedByClub.has(bggHit.id)
             })
@@ -119,10 +127,10 @@ export class GameSearcher {
   /**
    * Do a full search using local and remote games
    */
-  async doFullSearch(term: string) {
+  async doFullSearch(term: string): Promise<Game[]> {
     const gameById = new Map(this._games.value.map((game) => [game.bgg.id, game]))
 
-    const bggHits = await this._searchBgg(term, new AbortController().signal)
+    const bggHits = await this._searchBgg(term, new AbortController().signal, 0)
     bggHits.splice(this.maxFullResults, Number.MAX_SAFE_INTEGER)
 
     // Load missing games from BGG
@@ -153,7 +161,7 @@ export class GameSearcher {
   /**
    * Load the game information, from either the local db, local cache or BGG
    */
-  async loadGame(id: string) {
+  async loadGame(id: string): Promise<Game> {
     for (const game of this._games.value) {
       if (game.bgg.id === id) {
         return game
@@ -176,13 +184,13 @@ export class GameSearcher {
   /**
    * Search BGG after a delay or, if the results are cached, return them immediately
    */
-  async _searchBgg(term: string, abortSignal: AbortSignal) {
+  async _searchBgg(term: string, abortSignal: AbortSignal, bggDebounce: number) {
     const cached = this._bggSearchCache.get(term)
     if (cached) {
       return cached
     }
 
-    await sleep(this.bggDebounce)
+    await sleep(bggDebounce)
     if (abortSignal.aborted) {
       return []
     }

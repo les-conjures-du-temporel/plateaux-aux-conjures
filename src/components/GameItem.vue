@@ -14,6 +14,7 @@ export type Highlights = {
 
 const props = defineProps<{
   game: Game
+  simple?: boolean
   highlights?: Highlights
   relevantScores?: ScoreKind[]
 }>()
@@ -55,13 +56,15 @@ const weight = computed(() => {
   }
 })
 
+const sortedRelevantScores = computed(() => props.relevantScores?.slice()?.sort())
+
 function getIconForScoreKind(scoreKind: ScoreKind): string {
   return {
     players: 'groups',
     playTime: 'schedule',
     favoriteMatch: 'thumb_up',
-    bggRating: 'star',
-    randomDaily: 'assistant',
+    bggRating: 'emoji_events',
+    randomDaily: 'today',
     recentlyPlayed: 'share'
   }[scoreKind]
 }
@@ -76,15 +79,24 @@ function getLabelForScoreKind(scoreKind: ScoreKind): string {
     recentlyPlayed: 'joué récemment'
   }[scoreKind]
 }
+
+function onClickHeader() {
+  if (!props.simple) {
+    showDetails.value = !showDetails.value
+  }
+}
 </script>
 
 <template>
   <q-card flat class="q-my-sm">
-    <q-card-section horizontal @click="showDetails = !showDetails">
+    <q-card-section horizontal @click="onClickHeader">
       <q-img v-if="game.bgg.thumbnail" :src="game.bgg.thumbnail" class="col-3" fit="scale-down" />
 
       <q-card-section class="col-9">
         <span class="text-h6">{{ game.name }}</span>
+        <span class="text-caption" v-if="game.bgg.yearPublished">
+          ({{ game.bgg.yearPublished }})</span
+        >
 
         <div class="row">
           <div class="col-6">{{ numPlayers }}</div>
@@ -101,14 +113,14 @@ function getLabelForScoreKind(scoreKind: ScoreKind): string {
         <div class="row">
           <div class="col-6">
             <q-icon
-              v-for="scoreKind in relevantScores"
+              v-for="scoreKind in sortedRelevantScores"
               :key="scoreKind"
               :name="getIconForScoreKind(scoreKind)"
               class="q-mx-xs"
               size="1.25em"
             />
           </div>
-          <div class="col-6">
+          <div class="col-6" v-if="!simple">
             <q-btn
               color="white"
               text-color="black"
@@ -129,10 +141,10 @@ function getLabelForScoreKind(scoreKind: ScoreKind): string {
       @leave="(element) => ((element as HTMLElement).style.height = '0px')"
     >
       <q-card-section v-if="showDetails" class="q-pa-xs details-grid-container">
-        <template v-if="relevantScores?.length">
+        <template v-if="sortedRelevantScores?.length">
           <div>Bon match</div>
           <div>
-            <template v-for="(scoreKind, index) in relevantScores" :key="scoreKind">
+            <template v-for="(scoreKind, index) in sortedRelevantScores" :key="scoreKind">
               <br v-if="index > 0" />
               <q-icon :name="getIconForScoreKind(scoreKind)" class="q-mx-xs" size="1.25em" />
               {{ getLabelForScoreKind(scoreKind) }}

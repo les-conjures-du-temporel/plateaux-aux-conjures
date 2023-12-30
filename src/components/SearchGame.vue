@@ -17,10 +17,12 @@ const gameSearcher = new GameSearcher(games)
 
 type Item = {
   label: string
+  caption?: string
   value: string
   disable?: boolean
   icon?: string
   badge?: string
+  showSpinner: boolean
 }
 const items: Ref<Item[]> = ref([])
 let abortController = new AbortController()
@@ -36,14 +38,21 @@ function filterGameSearch(term: string, doneFn: (callbackFn: () => void) => void
       const newItems: Item[] = []
 
       if (term) {
-        newItems.push({ label: 'Montrer tous les résultats', value: term, icon: SEARCH_ICON })
+        newItems.push({
+          label: 'Montrer tous les résultats',
+          value: term,
+          icon: SEARCH_ICON,
+          showSpinner: false
+        })
       }
 
       for (const result of results) {
         newItems.push({
           label: result.name,
+          caption: result.yearPublished ? `(${result.yearPublished})` : undefined,
           value: result.id,
-          badge: result.ownedByClub ? 'au club' : undefined
+          badge: result.ownedByClub ? 'au club' : undefined,
+          showSpinner: false
         })
       }
 
@@ -52,7 +61,7 @@ function filterGameSearch(term: string, doneFn: (callbackFn: () => void) => void
           label: 'Recherche externe en cours',
           value: '',
           disable: true,
-          icon: 'pending'
+          showSpinner: true
         })
       }
 
@@ -106,11 +115,15 @@ function choseGame(game: Game): void {
     <template v-slot:option="scope">
       <q-item v-bind="scope.itemProps">
         <q-item-section>
-          <q-item-label>{{ scope.opt.label }}</q-item-label>
+          <q-item-label>
+            {{ scope.opt.label }}
+            <span class="text-caption" v-if="scope.opt.caption">{{ scope.opt.caption }}</span>
+          </q-item-label>
         </q-item-section>
 
-        <q-item-section avatar v-if="scope.opt.icon">
-          <q-icon :name="scope.opt.icon" />
+        <q-item-section avatar v-if="scope.opt.icon || scope.opt.showSpinner">
+          <q-icon :name="scope.opt.icon" v-if="scope.opt.icon" />
+          <q-spinner color="primary" size="2em" v-if="scope.opt.showSpinner" />
         </q-item-section>
 
         <q-item-section side top v-if="scope.opt.badge">
@@ -140,7 +153,7 @@ function choseGame(game: Game): void {
 
     <template v-for="(game, index) in fullSearchResults" :key="game.bgg.id">
       <q-separator v-if="index > 0" color="secondary" />
-      <game-item :game="game" class="cursor-pointer" @click="choseGame(game)" />
+      <game-item :game="game" class="cursor-pointer" @click="choseGame(game)" simple />
     </template>
   </div>
 </template>

@@ -4,7 +4,7 @@ GET https://boardgamegeek.com/xmlapi2/collection?username=lesconjures&brief=1
 >>! bgg-collection.xml
 
 ### boardgame
-GET https://boardgamegeek.com/xmlapi2/things?id=139030&type=boardgameaccessory&versions=1&stats=1
+GET https://boardgamegeek.com/xmlapi2/things?id=139030&type=boardgame&versions=1&stats=1
 
 >>! bgg-boardgames.xml
 
