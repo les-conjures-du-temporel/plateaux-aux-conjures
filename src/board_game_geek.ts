@@ -30,6 +30,7 @@ export interface BggGame {
   averageRating: number | null
   bayesAverageRating: number | null
   averageWeight: number | null
+  yearPublished: number | null
 }
 
 /**
@@ -279,7 +280,8 @@ function parseGameElement(gameEl: Element, progressCallback: ProgressCallback): 
     artists: extractStrings(gameEl.querySelectorAll('link[type="boardgameartist"]')),
     averageRating: extractNumber(gameEl.querySelector('statistics > ratings > average')),
     bayesAverageRating: extractNumber(gameEl.querySelector('statistics > ratings > bayesaverage')),
-    averageWeight: extractNumber(gameEl.querySelector('statistics > ratings > averageweight'))
+    averageWeight: extractNumber(gameEl.querySelector('statistics > ratings > averageweight')),
+    yearPublished: extractNumber(gameEl.querySelector('yearpublished'))
   }
 }
 
