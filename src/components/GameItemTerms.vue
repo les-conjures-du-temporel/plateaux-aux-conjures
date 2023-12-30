@@ -21,11 +21,11 @@ defineProps<{
 
 <style scoped>
 .highlight {
-  //text-decoration-line: underline;
-  //text-decoration-style: solid;
-  //text-decoration-color: #ca5843;
-  //text-decoration-thickness: 2px;
-  //text-decoration-skip-ink: none;
-  background-color: rgba(202, 88, 67, 0.25);
+  text-decoration-line: underline;
+  text-decoration-style: solid;
+  text-decoration-color: #ca5843;
+  text-decoration-thickness: 1px;
+  text-decoration-skip-ink: none;
+  background-color: rgba(202, 88, 67, 0.2);
 }
 </style>
