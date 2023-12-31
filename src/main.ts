@@ -31,17 +31,9 @@ const firebaseConfig = {
 }
 
 const firebaseApp = initializeApp(firebaseConfig)
-const functions = getFunctions(firebaseApp)
+// Note: the region must be the same one for the deployed function
+const functions = getFunctions(firebaseApp, 'europe-west1')
 const recordPlayActivity = httpsCallable(functions, 'recordPlayActivity')
-
-// TODO: remove debug
-// TODO: set up app check: https://firebase.google.com/docs/app-check/cloud-functions
-// TODO: set up region: https://firebase.google.com/docs/functions/locations
-recordPlayActivity({ gameId: '262712', day: '2023-12-31', location: 'club' })
-  .then((result) => {
-    console.log(result)
-  })
-  .catch((error) => console.warn(error))
 
 const db = new Database(firebaseApp)
 const games: Ref<Game[]> = ref([])
@@ -50,9 +42,12 @@ const translations: Ref<Translations> = ref({
   mechanics: new Map()
 })
 
+const passCode: Ref<string | null> = ref(null)
+
 app.provide('db', db)
 app.provide('games', games)
 app.provide('translations', translations)
+app.provide('passCode', passCode)
 
 app.mount('#app')
 
@@ -72,3 +67,12 @@ db.getTranslations()
   .catch((error) => {
     console.error(`Failed to load translations: ${error}`)
   })
+
+// Try to get the code from the current url, like '/some-page#yada'
+const hash = window.location.hash
+if (hash.startsWith('#') && hash.length > 1) {
+  passCode.value = hash.slice(1)
+
+  // Reload route to remove the hash value
+  router.replace(router.currentRoute.value).then(() => {})
+}
