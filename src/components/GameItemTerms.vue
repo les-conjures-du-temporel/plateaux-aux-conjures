@@ -3,6 +3,7 @@ defineProps<{
   label: string
   terms: string[]
   highlights?: Set<string>
+  translations?: Map<string, string>
 }>()
 </script>
 
@@ -13,7 +14,13 @@ defineProps<{
     <div>
       <template v-for="(term, index) in terms" :key="term">
         <br v-if="index > 0" />
-        <span :class="{ highlight: highlights?.has(term) }">{{ term }}</span>
+        <span
+          :class="{
+            highlight: highlights?.has(term),
+            'text-italic': translations && !translations.has(term)
+          }"
+          >{{ translations?.get(term) || term }}</span
+        >
       </template>
     </div>
   </template>

@@ -1,6 +1,15 @@
 import type { BggGame } from '@/board_game_geek'
 import { initializeApp } from 'firebase/app'
-import { collection, doc, Firestore, getDocs, getFirestore, writeBatch } from 'firebase/firestore'
+import {
+  collection,
+  doc,
+  Firestore,
+  getDoc,
+  getDocs,
+  getFirestore,
+  writeBatch,
+  setDoc
+} from 'firebase/firestore'
 
 /**
  * Represents a board game, that may or may not be in the club's catalog
@@ -17,6 +26,11 @@ export interface Game {
   totalPlays: number
 }
 
+export interface Translations {
+  categories: Map<string, string>
+  mechanics: Map<string, string>
+}
+
 /**
  * Represents the fact that someone from the club played a game
  */
@@ -28,8 +42,6 @@ interface PlayActivity {
 
 export class Database {
   _firestore: Firestore
-  _gamesRefreshed: Date | null = null
-  _gamesPromise: Promise<Game[]> | null = null
 
   constructor() {
     const firebaseConfig = {
@@ -78,6 +90,37 @@ export class Database {
 
       await batch.commit()
     }
+  }
+
+  async getTranslations(): Promise<Translations> {
+    const translationsDoc = await getDoc(doc(this._firestore, 'translations', 'translations'))
+    const translationsData = translationsDoc.data() || {}
+
+    function extractMap(value: any): Map<string, string> {
+      const map = new Map()
+      if (value && typeof value === 'object') {
+        for (const [fromText, toText] of Object.entries(value)) {
+          if (typeof toText === 'string') {
+            map.set(fromText, toText)
+          }
+        }
+      }
+      return map
+    }
+
+    return {
+      categories: extractMap(translationsData?.categories),
+      mechanics: extractMap(translationsData?.mechanics)
+    }
+  }
+
+  async setTranslations(translations: Translations): Promise<void> {
+    const asObject = {
+      categories: Object.fromEntries(translations.categories.entries()),
+      mechanics: Object.fromEntries(translations.mechanics.entries())
+    }
+
+    await setDoc(doc(this._firestore, 'translations', 'translations'), asObject)
   }
 
   // Return when the last sync operation was done

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Game } from '@/database'
-import { computed, ref } from 'vue'
+import type { Game, Translations } from '@/database'
+import { computed, inject, type Ref, ref } from 'vue'
 import { formatDate, formatNumber, pluralS } from '@/helpers'
 import GameItemTerms from '@/components/GameItemTerms.vue'
 import type { ScoreKind } from '@/game_scorer'
@@ -20,6 +20,7 @@ const props = defineProps<{
 }>()
 
 const showDetails = ref(false)
+const translations: Ref<Translations> = inject('translations')!
 
 const numPlayers = computed(() => {
   const game = props.game.bgg
@@ -138,6 +139,10 @@ function onClickHeader() {
     <transition
       name="expand"
       @enter="(element) => ((element as HTMLElement).style.height = `${element.scrollHeight}px`)"
+      @after-enter="(element) => ((element as HTMLElement).style.height = '')"
+      @before-leave="
+        (element) => ((element as HTMLElement).style.height = `${element.scrollHeight}px`)
+      "
       @leave="(element) => ((element as HTMLElement).style.height = '0px')"
     >
       <q-card-section v-if="showDetails" class="q-pa-xs details-grid-container">
@@ -155,12 +160,14 @@ function onClickHeader() {
         <game-item-terms
           :highlights="highlights?.categories"
           :terms="game.bgg.categories"
+          :translations="translations.categories"
           label="Catégories"
         />
 
         <game-item-terms
           :highlights="highlights?.mechanics"
           :terms="game.bgg.mechanics"
+          :translations="translations.mechanics"
           label="Mécaniques"
         />
 

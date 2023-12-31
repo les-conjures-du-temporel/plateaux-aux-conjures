@@ -8,7 +8,7 @@ import App from './App.vue'
 import { createApp, type Ref, ref } from 'vue'
 import { Quasar } from 'quasar'
 import quasarLang from 'quasar/lang/fr'
-import { Database, type Game } from '@/database'
+import { Database, type Game, type Translations } from '@/database'
 import router from '@/router'
 
 const app = createApp(App)
@@ -21,9 +21,14 @@ app.use(Quasar, {
 
 const db = new Database()
 const games: Ref<Game[]> = ref([])
+const translations: Ref<Translations> = ref({
+  categories: new Map(),
+  mechanics: new Map()
+})
 
 app.provide('db', db)
 app.provide('games', games)
+app.provide('translations', translations)
 
 app.mount('#app')
 
@@ -34,4 +39,12 @@ db.getGames()
   })
   .catch((error) => {
     console.error(`Failed to load games: ${error}`)
+  })
+
+db.getTranslations()
+  .then((loadedTranslations) => {
+    translations.value = loadedTranslations
+  })
+  .catch((error) => {
+    console.error(`Failed to load translations: ${error}`)
   })
