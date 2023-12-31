@@ -11,7 +11,7 @@ import quasarLang from 'quasar/lang/fr'
 import { Database, type Game, type Translations } from '@/database'
 import router from '@/router'
 import { initializeApp } from 'firebase/app'
-import { getFunctions, httpsCallable } from 'firebase/functions'
+import { CloudFunctions } from '@/cloud_functions'
 
 const app = createApp(App)
 
@@ -31,9 +31,6 @@ const firebaseConfig = {
 }
 
 const firebaseApp = initializeApp(firebaseConfig)
-// Note: the region must be the same one for the deployed function
-const functions = getFunctions(firebaseApp, 'europe-west1')
-const recordPlayActivity = httpsCallable(functions, 'recordPlayActivity')
 
 const db = new Database(firebaseApp)
 const games: Ref<Game[]> = ref([])
@@ -44,10 +41,13 @@ const translations: Ref<Translations> = ref({
 
 const passCode: Ref<string | null> = ref(null)
 
+const cloudFunctions = new CloudFunctions(firebaseApp, passCode)
+
 app.provide('db', db)
 app.provide('games', games)
 app.provide('translations', translations)
 app.provide('passCode', passCode)
+app.provide('cloudFunctions', cloudFunctions)
 
 app.mount('#app')
 
