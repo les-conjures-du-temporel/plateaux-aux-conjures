@@ -12,6 +12,12 @@ interface Response {
   message: string
 }
 
+const callOptions = {
+  secrets: [writePassCode],
+  enforceAppCheck: true,
+  region: 'europe-west1'
+}
+
 function checkPassCode(request: CallableRequest<{ passCode: string }>): void {
   if (request.data.passCode !== writePassCode.value()) {
     throw new Error('Invalid pass code')
@@ -25,9 +31,7 @@ interface BatchUpdateGamesRequest {
 }
 
 exports.batchUpdateGames = onCall(
-  {
-    secrets: [writePassCode]
-  },
+  callOptions,
   async (request: CallableRequest<BatchUpdateGamesRequest>): Promise<Response> => {
     checkPassCode(request)
 
@@ -54,9 +58,7 @@ interface RecordPlayActivityRequest {
 }
 
 exports.recordPlayActivity = onCall(
-  {
-    secrets: [writePassCode]
-  },
+  callOptions,
   async (request: CallableRequest<RecordPlayActivityRequest>): Promise<Response> => {
     checkPassCode(request)
 
@@ -105,9 +107,7 @@ interface SetTranslationsRequest {
 }
 
 exports.setTranslations = onCall(
-  {
-    secrets: [writePassCode]
-  },
+  callOptions,
   async (request: CallableRequest<SetTranslationsRequest>): Promise<Response> => {
     checkPassCode(request)
 
