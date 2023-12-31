@@ -22,7 +22,8 @@ export interface Game {
   ownedByClub: boolean
   // The code used to log a play
   clubCode: string | null
-  lastPlayed: Date | null
+  // In YYYY-MM-DD format
+  lastPlayed: string | null
   totalPlays: number
 }
 
@@ -35,8 +36,8 @@ export interface Translations {
  * Represents the fact that someone from the club played a game
  */
 interface PlayActivity {
-  // The time part is zeroed
-  day: Date
+  // In format YYYY-MM-DD
+  day: string
   location: 'club' | 'home' | 'festival'
 }
 
