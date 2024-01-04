@@ -2,7 +2,7 @@
 import SearchGame from '@/components/SearchGame.vue'
 import { computed, inject, type Ref, ref } from 'vue'
 import type { CloudFunctions } from '@/cloud_functions'
-import type { Game, PlayLocation } from '@/database'
+import { Database, type Game, type PlayLocation } from '@/database'
 import GameItem from '@/components/GameItem.vue'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
@@ -16,6 +16,7 @@ function dateToCalendarStr(date: Date): string {
   return date.toISOString().slice(0, 10).replace(/-/g, '/')
 }
 
+const db: Database = inject('db')!
 const cloudFunctions: CloudFunctions = inject('cloudFunctions')!
 
 const game: Ref<Game | null> = ref(null)
@@ -80,16 +81,6 @@ function save() {
   saveError.value = ''
 
   doSave()
-    .then(() => {
-      quasar.notify({
-        type: 'positive',
-        position: 'top',
-        message: 'Partie enregistrée'
-      })
-
-      game.value = null
-      router.push({ name: 'home' })
-    })
     .catch((error) => {
       saveError.value = String(error)
     })
@@ -108,6 +99,17 @@ async function doSave() {
   const playDateYyyyMmDd = `${year}-${month}-${day}`
 
   await cloudFunctions.recordPlayActivity(game.value.bgg.id, playDateYyyyMmDd, location.value)
+
+  quasar.notify({
+    type: 'positive',
+    position: 'top',
+    message: 'Partie enregistrée'
+  })
+
+  game.value = null
+
+  db.reloadGames()
+  await router.push({ name: 'home' })
 }
 </script>
 
@@ -168,7 +170,7 @@ async function doSave() {
     <q-option-group v-model="location" :options="locationOptions" type="radio" />
 
     <div class="text-h6 q-my-sm">
-      Clè d'accès
+      Clé d'accès
       <q-btn
         v-if="!isChangingPassCode"
         label="Changer"
