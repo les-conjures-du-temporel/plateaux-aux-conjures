@@ -18,10 +18,16 @@ export function formatNumber(n: number): string {
   return numberFormatter.format(n)
 }
 
-const dateFormatter = Intl.DateTimeFormat('fr')
-
-export function formatDate(d: Date): string {
-  return dateFormatter.format(d)
+/**
+ * Reformat date from `YYYY-MM-DD` into French style `DD/MM/YYYY`
+ */
+export function formatDate(date: string): string {
+  const match = date.match(/^(\d\d\d\d)-(\d\d)-(\d\d)$/)
+  if (!match) {
+    return date
+  }
+  const [_, year, month, day] = match
+  return `${day}/${month}/${year}`
 }
 
 export async function sleep(time: number): Promise<void> {

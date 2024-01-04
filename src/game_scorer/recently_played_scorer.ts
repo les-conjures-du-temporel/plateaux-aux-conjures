@@ -11,8 +11,9 @@ export class RecentlyPlayedScorer {
     const now = Date.now()
     const scoredGames = new Map()
     for (const game of games) {
-      if (game.lastPlayed) {
-        const time = now - game.lastPlayed.getTime()
+      const lastPlayed = parseDate(game.lastPlayed)
+      if (lastPlayed) {
+        const time = now - lastPlayed.getTime()
         const months = time / 3600e3 / 24 / 30
 
         if (months <= 1) {
@@ -23,5 +24,23 @@ export class RecentlyPlayedScorer {
       }
     }
     return scoredGames
+  }
+}
+
+function parseDate(date: string | null): Date | null {
+  const match = date?.match(/^(\d\d\d\d)-(\d\d)-(\d\d)$/)
+  if (!match) {
+    return null
+  }
+  const [_, yearStr, monthStr, dayStr] = match
+  try {
+    const year = Number.parseInt(yearStr)
+    const month = Number.parseInt(monthStr)
+    const day = Number.parseInt(dayStr)
+
+    console.log(year, month, day)
+    return new Date(year, month - 1, day)
+  } catch (_) {
+    return null
   }
 }
