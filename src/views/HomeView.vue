@@ -1,10 +1,17 @@
 <script setup lang="ts">
-import { ref, inject, type Ref } from 'vue'
-import type { Game } from '@/database'
+import { ref, inject, type Ref, computed } from 'vue'
+import { Database, type Game } from '@/database'
 import GameItem from '@/components/GameItem.vue'
 
-const games: Ref<Game[]> = inject('games')!
+const MAX_GAMES = 50
+const games: Ref<Game[]> = inject<Database>('db')!.games
 const loadError = ref(null)
+
+const recentGames = computed(() => {
+  const playedGames = games.value.filter((game) => game.lastPlayed)
+  playedGames.sort((a, b) => b.lastPlayed!.localeCompare(a.lastPlayed!))
+  return playedGames.slice(0, MAX_GAMES)
+})
 </script>
 
 <template>
@@ -52,7 +59,7 @@ const loadError = ref(null)
       Erreur de chargement: {{ loadError }}
     </q-banner>
 
-    <template v-for="(game, index) in games" :key="game.bgg.id">
+    <template v-for="(game, index) in recentGames" :key="game.bgg.id">
       <q-separator v-if="index > 0" color="secondary" />
       <game-item :game="game" />
     </template>
