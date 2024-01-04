@@ -4,6 +4,11 @@ import { computed, inject, type Ref, ref } from 'vue'
 import type { CloudFunctions } from '@/cloud_functions'
 import type { Game, PlayLocation } from '@/database'
 import GameItem from '@/components/GameItem.vue'
+import { useQuasar } from 'quasar'
+import { useRouter } from 'vue-router'
+
+const quasar = useQuasar()
+const router = useRouter()
 
 const MAX_PAST_DAYS = 30
 
@@ -75,6 +80,16 @@ function save() {
   saveError.value = ''
 
   doSave()
+    .then(() => {
+      quasar.notify({
+        type: 'positive',
+        position: 'top',
+        message: 'Partie enregistrée'
+      })
+
+      game.value = null
+      router.push({ name: 'home' })
+    })
     .catch((error) => {
       saveError.value = String(error)
     })

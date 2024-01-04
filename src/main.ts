@@ -5,7 +5,7 @@ import 'quasar/src/css/index.sass'
 
 import App from './App.vue'
 import { createApp, type Ref, ref, watch } from 'vue'
-import { Quasar } from 'quasar'
+import { Notify, Quasar } from 'quasar'
 import quasarLang from 'quasar/lang/fr'
 import { Database, type Game, type Translations } from '@/database'
 import router from '@/router'
@@ -17,7 +17,7 @@ const app = createApp(App)
 
 app.use(router)
 app.use(Quasar, {
-  plugins: {}, // import Quasar plugins and add here
+  plugins: { Notify },
   lang: quasarLang
 })
 
