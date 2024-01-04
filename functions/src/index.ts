@@ -1,4 +1,4 @@
-import { CallableRequest, onCall } from 'firebase-functions/v2/https'
+import { CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https'
 import * as firebaseAdmin from 'firebase-admin'
 import { logger } from 'firebase-functions'
 import { defineSecret } from 'firebase-functions/params'
@@ -20,7 +20,7 @@ const callOptions = {
 
 function checkPassCode(request: CallableRequest<{ passCode: string }>): void {
   if (request.data.passCode !== writePassCode.value()) {
-    throw new Error('Invalid pass code')
+    throw new HttpsError('unauthenticated', 'Invalid pass code')
   }
 }
 
@@ -67,11 +67,11 @@ exports.recordPlayActivity = onCall(
     const location = request.data.location
 
     if (!gameId.match(/^\d+$/)) {
-      throw new Error('Invalid game id')
+      throw new HttpsError('invalid-argument', 'Invalid game id')
     } else if (!day.match(/^\d{4}-\d\d-\d\d$/)) {
-      throw new Error('Invalid day')
+      throw new HttpsError('invalid-argument', 'Invalid day')
     } else if (!['club', 'home', 'festival'].includes(location)) {
-      throw new Error('Invalid location')
+      throw new HttpsError('invalid-argument', 'Invalid location')
     }
 
     logger.log(`Record play for ${gameId} at ${day} at ${location}`)
@@ -80,7 +80,7 @@ exports.recordPlayActivity = onCall(
       const gameRef = firestore.doc(`/games/${gameId}`)
       const game = (await transaction.get(gameRef)).data()
       if (!game) {
-        throw 'Document does not exist!'
+        throw new HttpsError('failed-precondition', 'Document does not exist')
       }
 
       const lastPlayed = game.lastPlayed || ''
