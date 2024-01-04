@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import AboutView from '@/views/AboutView.vue'
-import LogPlayView from '@/views/LogPlayView.vue'
+import LogPlayView from '@/views/RecordPlayView.vue'
 import SuggestView from '@/views/SuggestView.vue'
 
 const router = createRouter({
@@ -18,8 +18,8 @@ const router = createRouter({
       component: AboutView
     },
     {
-      path: '/log-play',
-      name: 'log-play',
+      path: '/record-play',
+      name: 'record-play',
       component: LogPlayView
     },
     {

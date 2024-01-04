@@ -35,7 +35,7 @@ const loadError = ref(null)
         no-caps
         padding="xs md"
         icon="rate_review"
-        :to="{ name: 'log-play' }"
+        :to="{ name: 'record-play' }"
       />
       pour qu'on sache
     </p>

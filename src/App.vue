@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
+import { ref } from 'vue'
 const leftDrawerOpen = ref(false)
+const router = useRouter()
 
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value
@@ -15,7 +17,12 @@ function toggleLeftDrawer() {
       <q-toolbar>
         <q-btn dense flat round icon="menu" @click="toggleLeftDrawer" />
 
-        <q-toolbar-title> Plateaux aux conjurés </q-toolbar-title>
+        <q-toolbar-title>
+          <span v-if="router.currentRoute.value.name == 'home'">Jeux du moment</span>
+          <span v-if="router.currentRoute.value.name == 'suggest'">Assistant</span>
+          <span v-if="router.currentRoute.value.name == 'record-play'">Enregistrer partie</span>
+          <span v-if="router.currentRoute.value.name == 'about'"> A propos </span>
+        </q-toolbar-title>
       </q-toolbar>
     </q-header>
 
@@ -30,7 +37,11 @@ function toggleLeftDrawer() {
         <q-tabs vertical no-caps inline-label active-bg-color="primary">
           <q-route-tab :to="{ name: 'home' }" label="Jeux du moment" icon="flare" />
           <q-route-tab :to="{ name: 'suggest' }" label="Assistant" icon="tips_and_updates" />
-          <q-route-tab :to="{ name: 'log-play' }" label="Enregistrer partie" icon="rate_review" />
+          <q-route-tab
+            :to="{ name: 'record-play' }"
+            label="Enregistrer partie"
+            icon="rate_review"
+          />
           <q-route-tab :to="{ name: 'about' }" label="A propos" icon="info" />
         </q-tabs>
       </q-scroll-area>

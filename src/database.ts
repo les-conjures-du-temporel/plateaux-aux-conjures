@@ -32,13 +32,15 @@ export interface Translations {
   mechanics: Map<string, string>
 }
 
+export type PlayLocation = 'club' | 'home' | 'festival' | 'other'
+
 /**
  * Represents the fact that someone from the club played a game
  */
 interface PlayActivity {
   // In format YYYY-MM-DD
   day: string
-  location: 'club' | 'home' | 'festival'
+  location: PlayLocation
 }
 
 export class Database {
