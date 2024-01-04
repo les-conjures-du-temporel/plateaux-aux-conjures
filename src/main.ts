@@ -11,6 +11,7 @@ import { Database, type Game, type Translations } from '@/database'
 import router from '@/router'
 import { initializeApp } from 'firebase/app'
 import { CloudFunctions } from '@/cloud_functions'
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check'
 
 const app = createApp(App)
 
@@ -30,6 +31,20 @@ const firebaseConfig = {
 }
 
 const firebaseApp = initializeApp(firebaseConfig)
+
+declare global {
+  interface Window {
+    FIREBASE_APPCHECK_DEBUG_TOKEN?: string
+  }
+}
+console.log(import.meta.env)
+if (import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG_TOKEN) {
+  window.FIREBASE_APPCHECK_DEBUG_TOKEN = import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG_TOKEN
+}
+initializeAppCheck(firebaseApp, {
+  provider: new ReCaptchaV3Provider('6LcrT0UpAAAAAPd0G1QvC60dxaSdm9kafIykWJFW'),
+  isTokenAutoRefreshEnabled: true
+})
 
 const db = new Database(firebaseApp)
 const games: Ref<Game[]> = ref([])

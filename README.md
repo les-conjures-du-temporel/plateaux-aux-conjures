@@ -16,6 +16,11 @@ See [Vite Configuration Reference](https://vitejs.dev/config/).
 npm install
 ```
 
+Create a file called `.env.development.local` with the following contents:
+```text
+VITE_FIREBASE_APPCHECK_DEBUG_TOKEN=<ask me for it>
+```
+
 ### Compile and Hot-Reload for Development
 
 ```sh
