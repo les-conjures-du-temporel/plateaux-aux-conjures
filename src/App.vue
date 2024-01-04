@@ -21,6 +21,12 @@ function toggleLeftDrawer() {
 
     <q-drawer v-model="leftDrawerOpen" side="left" overlay elevated no-swipe-open>
       <q-scroll-area class="fit">
+        <div class="text-center q-pa-sm">
+          <img style="height: 100px" src="/logo-conjures.png" alt="Logo des conjurés du temporel" />
+        </div>
+
+        <q-separator spaced />
+
         <q-tabs vertical no-caps inline-label active-bg-color="primary">
           <q-route-tab :to="{ name: 'home' }" label="Jeux du moment" icon="flare" />
           <q-route-tab :to="{ name: 'suggest' }" label="Assistant" icon="tips_and_updates" />
