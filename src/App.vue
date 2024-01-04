@@ -21,7 +21,7 @@ function toggleLeftDrawer() {
           <span v-if="router.currentRoute.value.name == 'home'">Jeux du moment</span>
           <span v-if="router.currentRoute.value.name == 'suggest'">Assistant</span>
           <span v-if="router.currentRoute.value.name == 'record-play'">Enregistrer partie</span>
-          <span v-if="router.currentRoute.value.name == 'about'"> A propos </span>
+          <span v-if="router.currentRoute.value.name == 'about'">A propos</span>
         </q-toolbar-title>
       </q-toolbar>
     </q-header>

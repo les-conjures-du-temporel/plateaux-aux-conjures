@@ -38,7 +38,6 @@ function parseDate(date: string | null): Date | null {
     const month = Number.parseInt(monthStr)
     const day = Number.parseInt(dayStr)
 
-    console.log(year, month, day)
     return new Date(year, month - 1, day)
   } catch (_) {
     return null

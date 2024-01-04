@@ -135,7 +135,6 @@ export class GameScorer {
     getValue: (game: ScoredGame) => number
   ): void {
     const sortedScores = scoredGames.map(getValue).sort((a, b) => a - b)
-    console.log(`${kind}: min=${sortedScores[0]}, max=${sortedScores[sortedScores.length - 1]}`)
     const relevancyIndex = Math.floor(
       (sortedScores.length - 1) * (1 - this._relevancyPercentile / 100)
     )
