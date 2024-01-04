@@ -10,6 +10,8 @@ import {
   writeBatch,
   setDoc
 } from 'firebase/firestore'
+import type { Ref } from 'vue'
+import { ref } from 'vue'
 
 /**
  * Represents a board game, that may or may not be in the club's catalog
@@ -34,26 +36,51 @@ export interface Translations {
 
 export type PlayLocation = 'club' | 'home' | 'festival' | 'other'
 
-/**
- * Represents the fact that someone from the club played a game
- */
-interface PlayActivity {
-  // In format YYYY-MM-DD
-  day: string
-  location: PlayLocation
-}
-
 export class Database {
+  games: Ref<Game[]> = ref([])
+  translations: Ref<Translations> = ref({
+    categories: new Map(),
+    mechanics: new Map()
+  })
   _firestore: Firestore
 
   constructor(firebaseApp: FirebaseApp) {
     this._firestore = getFirestore(firebaseApp)
+    this.reloadGames()
+    this.reloadTranslations()
+  }
+
+  reloadGames() {
+    this.games.value = []
+
+    this._getGames()
+      .then((loadedGames) => {
+        this.games.value = loadedGames
+      })
+      .catch((error) => {
+        console.error(`Failed to load games: ${error}`)
+      })
+  }
+
+  reloadTranslations() {
+    this.translations.value = {
+      categories: new Map(),
+      mechanics: new Map()
+    }
+
+    this._getTranslations()
+      .then((loadedTranslations) => {
+        this.translations.value = loadedTranslations
+      })
+      .catch((error) => {
+        console.error(`Failed to load translations: ${error}`)
+      })
   }
 
   /**
    * Return all the games from the database
    */
-  async getGames() {
+  async _getGames() {
     const gameQuerySnapshot = await getDocs(collection(this._firestore, 'games'))
     return gameQuerySnapshot.docs.map((doc) => doc.data() as Game)
   }
@@ -82,7 +109,7 @@ export class Database {
     }
   }
 
-  async getTranslations(): Promise<Translations> {
+  async _getTranslations(): Promise<Translations> {
     const translationsDoc = await getDoc(doc(this._firestore, 'translations', 'translations'))
     const translationsData = translationsDoc.data() || {}
 

@@ -10,7 +10,7 @@ export type ProgressCallback = (message: string, level: 'info' | 'warn') => void
  */
 export async function resyncCollection(db: Database, progressCallback: ProgressCallback) {
   // Extract current data from db
-  const staleGamesList = await db.getGames()
+  const staleGamesList = db.games.value
   const staleGames = new Map(staleGamesList.map((game) => [game.bgg.id, game]))
   progressCallback(`Database currently has ${staleGames.size} items`, 'info')
 

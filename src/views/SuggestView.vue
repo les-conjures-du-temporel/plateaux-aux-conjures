@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, type ComputedRef, inject, type Ref, ref } from 'vue'
 import SearchGame from '@/components/SearchGame.vue'
-import { type Game } from '@/database'
+import { Database, type Game } from '@/database'
 import GameItem, { type Highlights } from '@/components/GameItem.vue'
 import { pluralS } from '@/helpers'
 import { GameScorer } from '@/game_scorer'
 
 type Interval = [number, number]
 
-const games: Ref<Game[]> = inject('games')!
+const games: Ref<Game[]> = inject<Database>('db')!.games
 const tab = ref('players')
 
 // Declare possible options

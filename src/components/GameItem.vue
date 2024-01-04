@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Game, Translations } from '@/database'
+import { Database, type Game, type Translations } from '@/database'
 import { computed, inject, type Ref, ref } from 'vue'
 import { formatDate, formatNumber, pluralS } from '@/helpers'
 import GameItemTerms from '@/components/GameItemTerms.vue'
@@ -20,7 +20,7 @@ const props = defineProps<{
 }>()
 
 const showDetails = ref(false)
-const translations: Ref<Translations> = inject('translations')!
+const translations: Ref<Translations> = inject<Database>('db')!.translations
 
 const numPlayers = computed(() => {
   const game = props.game.bgg

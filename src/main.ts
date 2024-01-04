@@ -47,39 +47,15 @@ initializeAppCheck(firebaseApp, {
 })
 
 const db = new Database(firebaseApp)
-const games: Ref<Game[]> = ref([])
-const translations: Ref<Translations> = ref({
-  categories: new Map(),
-  mechanics: new Map()
-})
 
 const passCode: Ref<string | null> = ref(localStorage.getItem('passCode'))
 const cloudFunctions = new CloudFunctions(firebaseApp, passCode)
 
 app.provide('db', db)
-app.provide('games', games)
-app.provide('translations', translations)
 app.provide('cloudFunctions', cloudFunctions)
 app.provide('passCode', passCode)
 
 app.mount('#app')
-
-// Preload games
-db.getGames()
-  .then((loadedGames) => {
-    games.value = loadedGames
-  })
-  .catch((error) => {
-    console.error(`Failed to load games: ${error}`)
-  })
-
-db.getTranslations()
-  .then((loadedTranslations) => {
-    translations.value = loadedTranslations
-  })
-  .catch((error) => {
-    console.error(`Failed to load translations: ${error}`)
-  })
 
 // Store and recover the pass code from local storage
 watch(passCode, (passCode) => {
