@@ -29,13 +29,13 @@ export interface SetTranslationsRequest {
 }
 
 export class CloudFunctions {
-  passCode: Ref<string | null>
+  _passCode: Ref<string | null>
   _batchUpdateGames: HttpsCallable<BatchUpdateGamesRequest, Response>
   _recordPlayActivity: HttpsCallable<RecordPlayActivityRequest, Response>
   _setTranslations: HttpsCallable<SetTranslationsRequest, Response>
 
-  constructor(firebaseApp: FirebaseApp) {
-    this.passCode = ref(null)
+  constructor(firebaseApp: FirebaseApp, passCode: Ref<string | null>) {
+    this._passCode = passCode
 
     // Note: the region must be the same one for the deployed function
     const functions = getFunctions(firebaseApp, 'europe-west1')
@@ -81,8 +81,8 @@ export class CloudFunctions {
   }
 
   _getPassCode(): string {
-    if (this.passCode.value) {
-      return normalizeBase32Code(this.passCode.value)
+    if (this._passCode.value) {
+      return normalizeBase32Code(this._passCode.value)
     }
 
     throw new Error('Missing pass code')

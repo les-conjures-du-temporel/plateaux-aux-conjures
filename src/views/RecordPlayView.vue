@@ -64,7 +64,7 @@ const locationOptions: { label: string; value: PlayLocation }[] = [
 ]
 const location: Ref<PlayLocation> = ref('club')
 
-const passCode = cloudFunctions.passCode
+const passCode: Ref<string | null> = inject('passCode')!
 const isChangingPassCode: Ref<boolean> = ref(!passCode.value)
 
 const saving: Ref<boolean> = ref(false)
