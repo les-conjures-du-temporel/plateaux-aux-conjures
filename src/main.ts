@@ -37,7 +37,6 @@ declare global {
     FIREBASE_APPCHECK_DEBUG_TOKEN?: string
   }
 }
-console.log(import.meta.env)
 if (import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG_TOKEN) {
   window.FIREBASE_APPCHECK_DEBUG_TOKEN = import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG_TOKEN
 }
@@ -80,10 +79,12 @@ db.getTranslations()
   })
 
 // Try to get the code from the current url, like '/some-page#yada'
-const hash = window.location.hash
-if (hash.startsWith('#') && hash.length > 1) {
-  cloudFunctions.automaticPassCode.value = hash.slice(1)
+router.beforeEach((to) => {
+  const hash = to.hash
+  if (hash.startsWith('#') && hash.length > 1) {
+    cloudFunctions.passCode.value = hash.slice(1)
 
-  // Reload route to remove the hash value
-  router.replace(router.currentRoute.value).then(() => {})
-}
+    // Reload route to remove the hash value
+    router.replace({ ...to, hash: '' }).then(() => {})
+  }
+})

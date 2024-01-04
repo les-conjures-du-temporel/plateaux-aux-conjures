@@ -29,15 +29,13 @@ export interface SetTranslationsRequest {
 }
 
 export class CloudFunctions {
-  automaticPassCode: Ref<string | null>
-  manualPassCode: Ref<string | null>
+  passCode: Ref<string | null>
   _batchUpdateGames: HttpsCallable<BatchUpdateGamesRequest, Response>
   _recordPlayActivity: HttpsCallable<RecordPlayActivityRequest, Response>
   _setTranslations: HttpsCallable<SetTranslationsRequest, Response>
 
   constructor(firebaseApp: FirebaseApp) {
-    this.automaticPassCode = ref(null)
-    this.manualPassCode = ref(null)
+    this.passCode = ref(null)
 
     // Note: the region must be the same one for the deployed function
     const functions = getFunctions(firebaseApp, 'europe-west1')
@@ -82,16 +80,9 @@ export class CloudFunctions {
     })
   }
 
-  /**
-   * Return the pass code to use. Prefer a manually-entered code, if not present, use the automatic one.
-   * If neither is present, throw
-   */
   _getPassCode(): string {
-    if (this.manualPassCode.value) {
-      return normalizeBase32Code(this.manualPassCode.value)
-    }
-    if (this.automaticPassCode.value) {
-      return this.automaticPassCode.value
+    if (this.passCode.value) {
+      return normalizeBase32Code(this.passCode.value)
     }
 
     throw new Error('Missing pass code')

@@ -13,17 +13,17 @@ const router = createRouter({
       component: HomeView
     },
     {
-      path: '/about',
+      path: '/a-propos',
       name: 'about',
       component: AboutView
     },
     {
-      path: '/record-play',
+      path: '/enregistrer-partie',
       name: 'record-play',
       component: LogPlayView
     },
     {
-      path: '/suggest',
+      path: '/assistant',
       name: 'suggest',
       component: SuggestView
     }
