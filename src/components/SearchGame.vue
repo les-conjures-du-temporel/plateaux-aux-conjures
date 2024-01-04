@@ -105,6 +105,7 @@ function choseGame(game: Game): void {
     use-input
     fill-input
     hide-selected
+    outlined
     input-debounce="100"
     :options="items"
     @filter="filterGameSearch"
@@ -126,7 +127,7 @@ function choseGame(game: Game): void {
           <q-spinner color="primary" size="2em" v-if="scope.opt.showSpinner" />
         </q-item-section>
 
-        <q-item-section side top v-if="scope.opt.badge">
+        <q-item-section side v-if="scope.opt.badge">
           <q-badge color="primary" :label="scope.opt.badge" />
         </q-item-section>
       </q-item>

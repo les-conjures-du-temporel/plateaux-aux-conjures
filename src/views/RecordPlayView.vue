@@ -12,8 +12,6 @@ function dateToCalendarStr(date: Date): string {
 }
 
 const cloudFunctions: CloudFunctions = inject('cloudFunctions')!
-const automaticPassCode = cloudFunctions.automaticPassCode
-const manualPassCode = cloudFunctions.manualPassCode
 
 const game: Ref<Game | null> = ref(null)
 
@@ -21,7 +19,8 @@ const today = dateToCalendarStr(new Date())
 const minDate = dateToCalendarStr(new Date(Date.now() - MAX_PAST_DAYS * 24 * 3600e3))
 const minMonth = minDate.slice(0, 7)
 const maxMonth = today.slice(0, 7)
-const pickingDate: Ref<boolean> = ref(false)
+const isPickingDate: Ref<boolean> = ref(false)
+const pickingDate: Ref<string | null> = ref(null)
 const playDate: Ref<string> = ref(today)
 
 function isDateValid(date: string): boolean {
@@ -33,6 +32,18 @@ const humanPlayDate = computed(() => {
   return `${day}/${month}/${year}`
 })
 
+function startDatePick() {
+  isPickingDate.value = true
+  pickingDate.value = null
+}
+
+function endDatePick() {
+  if (pickingDate.value) {
+    playDate.value = pickingDate.value
+    isPickingDate.value = false
+  }
+}
+
 const locationOptions: { label: string; value: PlayLocation }[] = [
   {
     label: 'Dans les locaux du club',
@@ -43,7 +54,7 @@ const locationOptions: { label: string; value: PlayLocation }[] = [
     value: 'festival'
   },
   {
-    label: 'À la maison avec un jeu emprunté du club',
+    label: 'Autre part avec un jeu emprunté au club',
     value: 'home'
   },
   {
@@ -52,6 +63,9 @@ const locationOptions: { label: string; value: PlayLocation }[] = [
   }
 ]
 const location: Ref<PlayLocation> = ref('club')
+
+const passCode = cloudFunctions.passCode
+const isChangingPassCode: Ref<boolean> = ref(!passCode.value)
 
 const saving: Ref<boolean> = ref(false)
 const saveError: Ref<string | null> = ref(null)
@@ -89,17 +103,10 @@ async function doSave() {
       Ça nous aide à mieux connaître les jeux tendance :)
     </p>
 
-    <div class="text-h6 q-mt-sm">Quel jeu ?</div>
-    <search-game v-if="!game" @input="(selectedGame) => (game = selectedGame)" />
-    <div v-if="game">
-      <game-item v-if="game" :game="game"></game-item>
-      <q-btn unelevated label="Changer" @click="game = null" color="secondary" no-caps />
-    </div>
-
-    <div class="text-h6 q-mt-sm">Quand ?</div>
-    <p v-if="!pickingDate">
-      {{ humanPlayDate }}
+    <div class="text-h6 q-my-sm">
+      Quel jeu ?
       <q-btn
+        v-if="game"
         label="Changer"
         size="sm"
         unelevated
@@ -107,30 +114,67 @@ async function doSave() {
         icon="edit"
         color="secondary"
         class="q-mx-sm"
-        @click="pickingDate = true"
+        @click="game = null"
       />
+    </div>
+    <search-game v-if="!game" @input="(selectedGame) => (game = selectedGame)" />
+    <game-item v-if="game" :game="game"></game-item>
+
+    <div class="text-h6 q-my-sm">
+      Quand ?
+      <q-btn
+        v-if="!isPickingDate"
+        label="Changer"
+        size="sm"
+        unelevated
+        no-caps
+        icon="edit"
+        color="secondary"
+        class="q-mx-sm"
+        @click="startDatePick"
+      />
+    </div>
+    <p v-if="!isPickingDate">
+      {{ humanPlayDate }}
     </p>
     <q-date
-      v-if="pickingDate"
-      v-model="playDate"
+      v-if="isPickingDate"
+      v-model="pickingDate"
       :options="isDateValid"
-      no-unset
       :navigation-min-year-month="minMonth"
       :navigation-max-year-month="maxMonth"
       bordered
       flat
-      @update:model-value="pickingDate = false"
+      minimal
+      @update:model-value="endDatePick"
     />
 
     <div class="text-h6">Où ?</div>
     <q-option-group v-model="location" :options="locationOptions" type="radio" />
 
-    <div v-if="!automaticPassCode" class="q-my-sm">
-      <q-input
-        v-model="manualPassCode"
-        label="Clé d'accès"
-        hint="ce code est affiché dans nos locaux"
+    <div class="text-h6 q-my-sm">
+      Clè d'accès
+      <q-btn
+        v-if="!isChangingPassCode"
+        label="Changer"
+        size="sm"
+        unelevated
+        no-caps
+        icon="edit"
+        color="secondary"
+        class="q-mx-sm"
+        @click="isChangingPassCode = true"
       />
+    </div>
+    <div v-if="isChangingPassCode">
+      <q-input v-model="passCode" label="Saisis la clé de 6 caractères" outlined />
+    </div>
+    <div v-else>
+      <code>{{ passCode }}</code>
+    </div>
+    <div class="text-caption">
+      Ce code est affiché dans nos locaux et on l'utilise pour nous assurer que seulement nos
+      membres peuvent enregistrer ses parties
     </div>
 
     <q-banner class="text-white bg-accent" v-if="saveError">
@@ -144,7 +188,7 @@ async function doSave() {
       no-caps
       class="q-my-sm"
       :loading="saving"
-      :disable="game === null"
+      :disable="game === null || !passCode"
     />
   </div>
 </template>
