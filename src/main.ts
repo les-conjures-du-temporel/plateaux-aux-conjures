@@ -11,7 +11,7 @@ import { Database, type Game, type Translations } from '@/database'
 import router from '@/router'
 import { initializeApp } from 'firebase/app'
 import { CloudFunctions } from '@/cloud_functions'
-import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check'
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check'
 
 const app = createApp(App)
 
@@ -24,6 +24,7 @@ app.use(Quasar, {
 const firebaseConfig = {
   apiKey: 'AIzaSyBg8ecSB_ogiqWAWCZgWRcOKtkrRFu6fOE',
   authDomain: 'plateaux-aux-conjures.firebaseapp.com',
+  databaseURL: 'https://plateaux-aux-conjures-default-rtdb.europe-west1.firebasedatabase.app',
   projectId: 'plateaux-aux-conjures',
   storageBucket: 'plateaux-aux-conjures.appspot.com',
   messagingSenderId: '656580485619',
@@ -41,7 +42,7 @@ if (import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG_TOKEN) {
   window.FIREBASE_APPCHECK_DEBUG_TOKEN = import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG_TOKEN
 }
 initializeAppCheck(firebaseApp, {
-  provider: new ReCaptchaV3Provider('6LcrT0UpAAAAAPd0G1QvC60dxaSdm9kafIykWJFW'),
+  provider: new ReCaptchaEnterpriseProvider('6LcrT0UpAAAAAPd0G1QvC60dxaSdm9kafIykWJFW'),
   isTokenAutoRefreshEnabled: true
 })
 
