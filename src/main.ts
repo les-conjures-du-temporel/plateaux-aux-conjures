@@ -42,7 +42,7 @@ if (import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG_TOKEN) {
   window.FIREBASE_APPCHECK_DEBUG_TOKEN = import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG_TOKEN
 }
 initializeAppCheck(firebaseApp, {
-  provider: new ReCaptchaEnterpriseProvider('6LcrT0UpAAAAAPd0G1QvC60dxaSdm9kafIykWJFW'),
+  provider: new ReCaptchaEnterpriseProvider('6LdgekYpAAAAAM7LSJeKJ5zMaUEYVaswk519D3eV'),
   isTokenAutoRefreshEnabled: true
 })
 
