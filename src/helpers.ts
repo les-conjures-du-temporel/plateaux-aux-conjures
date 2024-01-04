@@ -48,15 +48,27 @@ export function generateClubCode(): string {
 }
 
 /**
- * Accept small typos in the base-32 chars
+ * Accept small typos in the base-32 chars used in a club code
  */
 export function normalizeClubCode(text: string): string | null {
-  const normal = text.trim().toUpperCase().replace(/0/g, 'O').replace(/1/g, 'I').replace(/8/g, 'B')
+  const normal = normalizeBase32Code(text)
 
   if (normal.match(/^[A-Z234567]{4}$/)) {
     return normal
   }
   return null
+}
+
+/**
+ * Accept small typos in the base-32 chars
+ */
+export function normalizeBase32Code(text: string): string {
+  return text
+    .toUpperCase()
+    .replace(/\s/g, '')
+    .replace(/0/g, 'O')
+    .replace(/1/g, 'I')
+    .replace(/8/g, 'B')
 }
 
 export function buildGameFromBggGame(bggGame: BggGame, ownedByClub: boolean, name?: string): Game {

@@ -1,6 +1,7 @@
 import type { FirebaseApp } from 'firebase/app'
 import { getFunctions, httpsCallable, type HttpsCallable } from 'firebase/functions'
-import type { Ref } from 'vue'
+import { ref, type Ref } from 'vue'
+import { normalizeBase32Code } from '@/helpers'
 
 export interface Response {
   message: string
@@ -28,12 +29,16 @@ export interface SetTranslationsRequest {
 }
 
 export class CloudFunctions {
-  _passCode: Ref<string | null>
+  automaticPassCode: Ref<string | null>
+  manualPassCode: Ref<string | null>
   _batchUpdateGames: HttpsCallable<BatchUpdateGamesRequest, Response>
   _recordPlayActivity: HttpsCallable<RecordPlayActivityRequest, Response>
   _setTranslations: HttpsCallable<SetTranslationsRequest, Response>
 
-  constructor(firebaseApp: FirebaseApp, passCode: Ref<string | null>) {
+  constructor(firebaseApp: FirebaseApp) {
+    this.automaticPassCode = ref(null)
+    this.manualPassCode = ref(null)
+
     // Note: the region must be the same one for the deployed function
     const functions = getFunctions(firebaseApp, 'europe-west1')
     this._batchUpdateGames = httpsCallable<BatchUpdateGamesRequest, Response>(
@@ -48,8 +53,6 @@ export class CloudFunctions {
       functions,
       'setTranslations'
     )
-
-    this._passCode = passCode
   }
 
   async batchUpdateGames(
@@ -57,7 +60,7 @@ export class CloudFunctions {
     updates: { id: string; updates: object }[]
   ): Promise<void> {
     await this._batchUpdateGames({
-      passCode: this._passCode.value!,
+      passCode: this._getPassCode(),
       additions,
       updates
     })
@@ -65,7 +68,7 @@ export class CloudFunctions {
 
   async recordPlayActivity(gameId: string, day: string, location: string): Promise<void> {
     await this._recordPlayActivity({
-      passCode: this._passCode.value!,
+      passCode: this._getPassCode(),
       gameId,
       day,
       location
@@ -74,8 +77,23 @@ export class CloudFunctions {
 
   async setTranslations(translations: { categories: object; mechanics: object }): Promise<void> {
     await this._setTranslations({
-      passCode: this._passCode.value!,
+      passCode: this._getPassCode(),
       translations
     })
+  }
+
+  /**
+   * Return the pass code to use. Prefer a manually-entered code, if not present, use the automatic one.
+   * If neither is present, throw
+   */
+  _getPassCode(): string {
+    if (this.manualPassCode.value) {
+      return normalizeBase32Code(this.manualPassCode.value)
+    }
+    if (this.automaticPassCode.value) {
+      return this.automaticPassCode.value
+    }
+
+    throw new Error('Missing pass code')
   }
 }

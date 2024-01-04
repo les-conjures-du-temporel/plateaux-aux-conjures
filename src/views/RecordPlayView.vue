@@ -12,6 +12,8 @@ function dateToCalendarStr(date: Date): string {
 }
 
 const cloudFunctions: CloudFunctions = inject('cloudFunctions')!
+const automaticPassCode = cloudFunctions.automaticPassCode
+const manualPassCode = cloudFunctions.manualPassCode
 
 const game: Ref<Game | null> = ref(null)
 
@@ -98,7 +100,7 @@ async function doSave() {
     <p v-if="!pickingDate">
       {{ humanPlayDate }}
       <q-btn
-        label="Change"
+        label="Changer"
         size="sm"
         unelevated
         no-caps
@@ -122,6 +124,14 @@ async function doSave() {
 
     <div class="text-h6">Où ?</div>
     <q-option-group v-model="location" :options="locationOptions" type="radio" />
+
+    <div v-if="!automaticPassCode" class="q-my-sm">
+      <q-input
+        v-model="manualPassCode"
+        label="Clé d'accès"
+        hint="ce code est affiché dans nos locaux"
+      />
+    </div>
 
     <q-banner class="text-white bg-accent" v-if="saveError">
       Erreur dans la requête : {{ saveError }}

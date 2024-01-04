@@ -53,14 +53,11 @@ const translations: Ref<Translations> = ref({
   mechanics: new Map()
 })
 
-const passCode: Ref<string | null> = ref(null)
-
-const cloudFunctions = new CloudFunctions(firebaseApp, passCode)
+const cloudFunctions = new CloudFunctions(firebaseApp)
 
 app.provide('db', db)
 app.provide('games', games)
 app.provide('translations', translations)
-app.provide('passCode', passCode)
 app.provide('cloudFunctions', cloudFunctions)
 
 app.mount('#app')
@@ -85,7 +82,7 @@ db.getTranslations()
 // Try to get the code from the current url, like '/some-page#yada'
 const hash = window.location.hash
 if (hash.startsWith('#') && hash.length > 1) {
-  passCode.value = hash.slice(1)
+  cloudFunctions.automaticPassCode.value = hash.slice(1)
 
   // Reload route to remove the hash value
   router.replace(router.currentRoute.value).then(() => {})
