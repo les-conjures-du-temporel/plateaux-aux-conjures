@@ -12,7 +12,6 @@ import {
 } from 'firebase/firestore'
 import type { Ref } from 'vue'
 import { ref } from 'vue'
-import { LoadingBar, Notify } from 'quasar'
 import { notifyError } from '@/helpers'
 
 /**
@@ -53,7 +52,6 @@ export class Database {
   }
 
   reloadGames() {
-    LoadingBar.start()
     this.games.value = []
 
     this._getGames()
@@ -63,13 +61,9 @@ export class Database {
       .catch((error) => {
         notifyError(error)
       })
-      .finally(() => {
-        LoadingBar.stop()
-      })
   }
 
   reloadTranslations() {
-    LoadingBar.start()
     this.translations.value = {
       categories: new Map(),
       mechanics: new Map()
@@ -81,9 +75,6 @@ export class Database {
       })
       .catch((error) => {
         notifyError(error)
-      })
-      .finally(() => {
-        LoadingBar.stop()
       })
   }
 

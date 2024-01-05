@@ -281,6 +281,10 @@ function addFavoriteGame(game: Game): void {
     </q-card>
   </div>
 
+  <div class="text-center" v-if="games.length === 0">
+    <q-spinner color="primary" size="5em" />
+  </div>
+
   <div class="q-ma-md" v-if="suggestionResults">
     <q-banner class="bg-secondary text-white" v-if="!suggestionResults.length">
       Aucun résultat n'a été trouvé. Essaye de changer les critères de la recherche
