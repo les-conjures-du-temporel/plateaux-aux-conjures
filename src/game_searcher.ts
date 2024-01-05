@@ -1,7 +1,7 @@
 import type { Game } from '@/database'
 import type { BggSearchHit } from '@/board_game_geek'
 import { getGamesInBatches, searchGames } from '@/board_game_geek'
-import { buildGameFromBggGame, normalizeClubCode, sleep } from '@/helpers'
+import { buildGameFromBggGame, normalizeClubCode, notifyError, notifyWarn, sleep } from '@/helpers'
 import type { ComputedRef, Ref } from 'vue'
 import { computed } from 'vue'
 
@@ -119,7 +119,7 @@ export class GameSearcher {
         resultsCallback(hits, false)
       })
       .catch((error) => {
-        console.warn(error)
+        notifyWarn(error, 'bottom')
         resultsCallback(hits, false)
       })
   }

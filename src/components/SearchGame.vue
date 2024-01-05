@@ -3,6 +3,7 @@ import { inject, ref, type Ref, watch } from 'vue'
 import { GameSearcher } from '@/game_searcher'
 import { Database, type Game } from '@/database'
 import GameItem from '@/components/GameItem.vue'
+import { notifyWarn } from '@/helpers'
 
 const emit = defineEmits<{
   input: [input: Game]
@@ -80,13 +81,23 @@ watch(selectedItem, async (newItem) => {
     return
   } else if (newItem.icon === SEARCH_ICON) {
     state.value = 'loading'
-    fullSearchResults.value = await gameSearcher.doFullSearch(newItem.value)
-    state.value = 'full-search'
+    try {
+      fullSearchResults.value = await gameSearcher.doFullSearch(newItem.value)
+      state.value = 'full-search'
+    } catch (error) {
+      notifyWarn(error as Error)
+      state.value = 'input'
+    }
   } else {
     state.value = 'loading'
-    const game = await gameSearcher.loadGame(newItem.value)
-    emit('input', game)
-    state.value = 'input'
+    try {
+      const game = await gameSearcher.loadGame(newItem.value)
+      emit('input', game)
+      state.value = 'input'
+    } catch (error) {
+      notifyWarn(error as Error)
+      state.value = 'input'
+    }
   }
 })
 

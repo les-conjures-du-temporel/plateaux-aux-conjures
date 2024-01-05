@@ -87,10 +87,20 @@ export function notifyError(error: Error): void {
   Notify.create({
     type: 'negative',
     position: 'top',
-    message: 'Erreur de chargement. Essaie de rafraîchir la page.'
+    message: 'Erreur de chargement, essaie de rafraîchir la page'
   })
 
   console.error(error)
+}
+
+export function notifyWarn(error: Error, position: 'top' | 'bottom' = 'top'): void {
+  Notify.create({
+    type: 'warning',
+    position,
+    message: 'Erreur de chargement'
+  })
+
+  console.warn(error)
 }
 
 export function notifySuccess(message: string): void {
