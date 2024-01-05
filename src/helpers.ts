@@ -1,5 +1,6 @@
 import type { BggGame } from '@/board_game_geek'
 import type { Game } from '@/database'
+import { Notify } from 'quasar'
 
 export function plural(n: number, singular: string, plural: string): string {
   return `${n} ${n === 1 ? singular : plural}`
@@ -80,4 +81,22 @@ export function buildGameFromBggGame(bggGame: BggGame, ownedByClub: boolean, nam
     name: name || bggGame.primaryName,
     totalPlays: 0
   }
+}
+
+export function notifyError(error: Error): void {
+  Notify.create({
+    type: 'negative',
+    position: 'top',
+    message: 'Erreur de chargement. Essaie de rafraîchir la page.'
+  })
+
+  console.error(error)
+}
+
+export function notifySuccess(message: string): void {
+  Notify.create({
+    type: 'positive',
+    position: 'top',
+    message: message
+  })
 }

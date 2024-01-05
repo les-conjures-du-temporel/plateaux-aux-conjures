@@ -12,6 +12,8 @@ import {
 } from 'firebase/firestore'
 import type { Ref } from 'vue'
 import { ref } from 'vue'
+import { LoadingBar, Notify } from 'quasar'
+import { notifyError } from '@/helpers'
 
 /**
  * Represents a board game, that may or may not be in the club's catalog
@@ -51,6 +53,7 @@ export class Database {
   }
 
   reloadGames() {
+    LoadingBar.start()
     this.games.value = []
 
     this._getGames()
@@ -58,11 +61,15 @@ export class Database {
         this.games.value = loadedGames
       })
       .catch((error) => {
-        console.error(`Failed to load games: ${error}`)
+        notifyError(error)
+      })
+      .finally(() => {
+        LoadingBar.stop()
       })
   }
 
   reloadTranslations() {
+    LoadingBar.start()
     this.translations.value = {
       categories: new Map(),
       mechanics: new Map()
@@ -73,7 +80,10 @@ export class Database {
         this.translations.value = loadedTranslations
       })
       .catch((error) => {
-        console.error(`Failed to load translations: ${error}`)
+        notifyError(error)
+      })
+      .finally(() => {
+        LoadingBar.stop()
       })
   }
 

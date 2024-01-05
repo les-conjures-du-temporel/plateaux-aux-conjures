@@ -6,6 +6,7 @@ import { Database, type Game, type PlayLocation } from '@/database'
 import GameItem from '@/components/GameItem.vue'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
+import { notifySuccess } from '@/helpers'
 
 const quasar = useQuasar()
 const router = useRouter()
@@ -100,11 +101,7 @@ async function doSave() {
 
   await cloudFunctions.recordPlayActivity(game.value.bgg.id, playDateYyyyMmDd, location.value)
 
-  quasar.notify({
-    type: 'positive',
-    position: 'top',
-    message: 'Partie enregistrée'
-  })
+  notifySuccess('Partie enregistrée')
 
   game.value = null
 

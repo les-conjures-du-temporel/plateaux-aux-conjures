@@ -5,9 +5,9 @@ import 'quasar/src/css/index.sass'
 
 import App from './App.vue'
 import { createApp, type Ref, ref, watch } from 'vue'
-import { Notify, Quasar } from 'quasar'
+import { LoadingBar, Notify, Quasar } from 'quasar'
 import quasarLang from 'quasar/lang/fr'
-import { Database, type Game, type Translations } from '@/database'
+import { Database } from '@/database'
 import router from '@/router'
 import { initializeApp } from 'firebase/app'
 import { CloudFunctions } from '@/cloud_functions'
@@ -17,8 +17,14 @@ const app = createApp(App)
 
 app.use(router)
 app.use(Quasar, {
-  plugins: { Notify },
-  lang: quasarLang
+  plugins: { Notify, LoadingBar },
+  lang: quasarLang,
+  config: {
+    loadingBar: {
+      size: '10px',
+      color: 'accent'
+    }
+  }
 })
 
 const firebaseConfig = {
