@@ -17,6 +17,7 @@ const props = defineProps<{
   simple?: boolean
   highlights?: Highlights
   relevantScores?: ScoreKind[]
+  showTotalPlays?: boolean
 }>()
 
 const showDetails = ref(false)
@@ -66,7 +67,7 @@ function getIconForScoreKind(scoreKind: ScoreKind): string {
     favoriteMatch: 'thumb_up',
     bggRating: 'emoji_events',
     randomDaily: 'today',
-    recentlyPlayed: 'share'
+    recentlyPlayed: 'flare'
   }[scoreKind]
 }
 
@@ -75,8 +76,8 @@ function getLabelForScoreKind(scoreKind: ScoreKind): string {
     players: 'recommandé pour ce nombre de joueurs',
     playTime: 'probablement dans le temps demandé',
     favoriteMatch: 'similaire aux jeux favoris',
-    bggRating: 'une bonne note sur BGG',
-    randomDaily: 'choix aléatoire du jour',
+    bggRating: 'une bonne note sur Board Game Geek',
+    randomDaily: 'suggestions aléatoires du jour',
     recentlyPlayed: 'joué récemment'
   }[scoreKind]
 }
@@ -98,6 +99,11 @@ function onClickHeader() {
         <span class="text-caption" v-if="game.bgg.yearPublished">
           ({{ game.bgg.yearPublished }})</span
         >
+
+        <div v-if="showTotalPlays && game.lastPlayed" class="row">
+          <div class="col-6">joué le {{ formatDate(game.lastPlayed) }}</div>
+          <div class="col-6">{{ pluralS(game.totalPlays, 'partie') }}</div>
+        </div>
 
         <div class="row">
           <div class="col-6">{{ numPlayers }}</div>
@@ -157,6 +163,16 @@ function onClickHeader() {
           </div>
         </template>
 
+        <div class="details-span-2">
+          Informations retirées du site
+          <a
+            :href="'https://boardgamegeek.com/boardgame/' + encodeURIComponent(game.bgg.id)"
+            target="_blank"
+            >boardgamegeek.com</a
+          >
+          <q-separator spaced inset size="2px" />
+        </div>
+
         <game-item-terms
           :highlights="highlights?.categories"
           :terms="game.bgg.categories"
@@ -193,27 +209,24 @@ function onClickHeader() {
           <div>{{ formatNumber(game.bgg.averageWeight) }} / 5</div>
         </template>
 
+        <div class="details-span-2">
+          Informations du club
+          <q-separator spaced inset size="2px" />
+        </div>
+
         <template v-if="game.clubCode">
           <div>Code conjuré</div>
-          <div>{{ game.clubCode }}</div>
+          <div>
+            <code>{{ game.clubCode }}</code>
+          </div>
         </template>
 
         <template v-if="game.lastPlayed">
-          <div>Parties enregistrées</div>
+          <div>Parties jouées</div>
           <div>{{ game.totalPlays }}</div>
           <div>Dernière partie</div>
           <div>{{ formatDate(game.lastPlayed) }}</div>
         </template>
-
-        <div>Plus d'info</div>
-        <div>
-          Aller sur
-          <a
-            :href="'https://boardgamegeek.com/boardgame/' + encodeURIComponent(game.bgg.id)"
-            target="_blank"
-            >boardgamegeek.com</a
-          >
-        </div>
       </q-card-section>
     </transition>
   </q-card>
@@ -235,5 +248,10 @@ function onClickHeader() {
   display: grid;
   grid-template-columns: max-content 1fr;
   grid-gap: 5px;
+}
+
+.details-span-2 {
+  grid-column-end: span 2;
+  text-align: center;
 }
 </style>
