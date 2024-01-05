@@ -4,11 +4,9 @@ import { computed, inject, type Ref, ref } from 'vue'
 import type { CloudFunctions } from '@/cloud_functions'
 import { Database, type Game, type PlayLocation } from '@/database'
 import GameItem from '@/components/GameItem.vue'
-import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
-import { notifySuccess } from '@/helpers'
+import { notifyError, notifySuccess } from '@/helpers'
 
-const quasar = useQuasar()
 const router = useRouter()
 
 const MAX_PAST_DAYS = 30
@@ -75,15 +73,17 @@ const passCode: Ref<string | null> = inject('passCode')!
 const isChangingPassCode: Ref<boolean> = ref(!passCode.value)
 
 const saving: Ref<boolean> = ref(false)
-const saveError: Ref<string | null> = ref(null)
 
 function save() {
   saving.value = true
-  saveError.value = ''
 
   doSave()
     .catch((error) => {
-      saveError.value = String(error)
+      if ('code' in error && error.code === 'functions/unauthenticated') {
+        notifyError(error, "Clé d'accès invalide")
+      } else {
+        notifyError(error)
+      }
     })
     .finally(() => {
       saving.value = false
@@ -181,7 +181,7 @@ async function doSave() {
       />
     </div>
     <div v-if="isChangingPassCode">
-      <q-input v-model="passCode" label="Saisis la clé de 6 caractères" outlined />
+      <q-input v-model="passCode" label="Saisis la clé de 8 caractères" outlined mask="XXXX XXXX" />
     </div>
     <div v-else>
       <code>{{ passCode }}</code>
@@ -191,9 +191,6 @@ async function doSave() {
       membres peuvent enregistrer ses parties
     </div>
 
-    <q-banner class="text-white bg-accent" v-if="saveError">
-      Erreur dans la requête : {{ saveError }}
-    </q-banner>
     <q-btn
       label="Enregistrer"
       @click="save"

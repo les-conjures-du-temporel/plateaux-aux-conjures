@@ -83,11 +83,11 @@ export function buildGameFromBggGame(bggGame: BggGame, ownedByClub: boolean, nam
   }
 }
 
-export function notifyError(error: Error): void {
+export function notifyError(error: Error, message?: string): void {
   Notify.create({
     type: 'negative',
     position: 'top',
-    message: 'Erreur de chargement, essaie de rafraîchir la page'
+    message: message ?? 'Erreur de chargement, essaie de rafraîchir la page'
   })
 
   console.error(error)

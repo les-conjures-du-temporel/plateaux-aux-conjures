@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { ref, inject, type Ref, computed } from 'vue'
+import { inject, type Ref, computed } from 'vue'
 import { Database, type Game } from '@/database'
 import GameItem from '@/components/GameItem.vue'
 
 const MAX_GAMES = 50
 const games: Ref<Game[]> = inject<Database>('db')!.games
-const loadError = ref(null)
 
 const recentGames = computed(() => {
   const playedGames = games.value.filter((game) => game.lastPlayed)
@@ -54,10 +53,6 @@ const recentGames = computed(() => {
     <div class="text-center" v-if="games.length === 0">
       <q-spinner color="primary" size="5em" />
     </div>
-
-    <q-banner class="text-white bg-accent" v-if="loadError">
-      Erreur de chargement: {{ loadError }}
-    </q-banner>
 
     <template v-for="(game, index) in recentGames" :key="game.bgg.id">
       <q-separator v-if="index > 0" color="secondary" />
