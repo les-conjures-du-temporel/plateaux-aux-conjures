@@ -90,16 +90,29 @@ function save() {
     })
 }
 
+/**
+ * Convert from YYYY/MM/DD to YYYY-MM-DD
+ */
+function convertCalendarToIso(date: string): string {
+  return date.replace(/\//g, '-')
+}
+
 async function doSave() {
   if (!game.value) {
     return
   }
 
-  // Convert to YYYY-MM-DD
-  const [year, month, day] = playDate.value.split('/')
-  const playDateYyyyMmDd = `${year}-${month}-${day}`
+  const gameId = game.value.bgg.id
+  if (db.games.value.every((dbGame) => dbGame.bgg.id !== gameId)) {
+    // Insert new game
+    await cloudFunctions.batchUpdateGames([{ id: gameId, value: game.value }], [])
+  }
 
-  await cloudFunctions.recordPlayActivity(game.value.bgg.id, playDateYyyyMmDd, location.value)
+  await cloudFunctions.recordPlayActivity(
+    gameId,
+    convertCalendarToIso(playDate.value),
+    location.value
+  )
 
   notifySuccess('Partie enregistrée')
 
@@ -132,7 +145,7 @@ async function doSave() {
       />
     </div>
     <search-game v-if="!game" @input="(selectedGame) => (game = selectedGame)" />
-    <game-item v-if="game" :game="game"></game-item>
+    <game-item v-if="game" :game="game" show-total-plays></game-item>
 
     <div class="text-h6 q-my-sm">
       Quand ?
@@ -162,6 +175,19 @@ async function doSave() {
       minimal
       @update:model-value="endDatePick"
     />
+
+    <q-banner
+      class="bg-warning q-my-sm"
+      v-if="game && game.lastPlayed === convertCalendarToIso(playDate)"
+    >
+      <div class="row q-gutter-sm">
+        <div class="col-auto"><q-icon name="warning" size="sm" /></div>
+        <div class="col">
+          Quelqu'un a déjà enregistré une partie de ce jeu à cette date.<br />
+          Si vous avez joué ensemble, inutile de l'enregistrer aussi.
+        </div>
+      </div>
+    </q-banner>
 
     <div class="text-h6">Où ?</div>
     <q-option-group v-model="location" :options="locationOptions" type="radio" />

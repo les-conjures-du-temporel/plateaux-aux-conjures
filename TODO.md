@@ -1,4 +1,1 @@
-- detect loading errors and show error banner
-- alert when trying to record play for a game that already has one for today
-- resync games from time to time in the background? this is useful for the check above
 - replace all methods with `_` as private

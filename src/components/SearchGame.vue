@@ -144,7 +144,7 @@ function choseGame(game: Game): void {
     </template>
 
     <template v-slot:after-options>
-      <q-item class="bg-secondary text-white" @click="displayFullSearch">
+      <q-item class="bg-secondary text-white cursor-pointer" @click.capture="displayFullSearch">
         <q-item-section>
           <q-item-label>Montrer tous les résultats</q-item-label>
         </q-item-section>

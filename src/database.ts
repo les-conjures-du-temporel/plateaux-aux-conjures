@@ -45,10 +45,14 @@ export class Database {
   })
   _firestore: Firestore
 
-  constructor(firebaseApp: FirebaseApp) {
+  constructor(firebaseApp: FirebaseApp, autoUpdateMs: number = 60e3) {
     this._firestore = getFirestore(firebaseApp)
     this.reloadGames()
     this.reloadTranslations()
+
+    setInterval(() => {
+      this.reloadGames()
+    }, autoUpdateMs)
   }
 
   reloadGames() {
@@ -84,30 +88,6 @@ export class Database {
   async _getGames() {
     const gameQuerySnapshot = await getDocs(collection(this._firestore, 'games'))
     return gameQuerySnapshot.docs.map((doc) => doc.data() as Game)
-  }
-
-  async batchAdd(games: Game[]) {
-    if (games.length) {
-      const batch = writeBatch(this._firestore)
-
-      for (const game of games) {
-        batch.set(doc(this._firestore, 'games', game.bgg.id), game)
-      }
-
-      await batch.commit()
-    }
-  }
-
-  async batchUpdate(games: Map<string, any>) {
-    if (games.size) {
-      const batch = writeBatch(this._firestore)
-
-      for (const [id, updates] of games.entries()) {
-        batch.update(doc(this._firestore, 'games', id), updates)
-      }
-
-      await batch.commit()
-    }
   }
 
   async _getTranslations(): Promise<Translations> {
