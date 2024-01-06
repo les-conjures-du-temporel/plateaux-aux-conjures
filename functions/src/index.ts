@@ -38,7 +38,7 @@ exports.batchUpdateGames = onCall(
     const batch = firestore.batch()
 
     for (const { id, value } of request.data.additions) {
-      batch.set(firestore.doc(`/games/${id}`), value)
+      batch.create(firestore.doc(`/games/${id}`), value)
     }
     for (const { id, updates } of request.data.updates) {
       batch.update(firestore.doc(`/games/${id}`), updates)
