@@ -3,6 +3,7 @@ import HomeView from '@/views/HomeView.vue'
 import AboutView from '@/views/AboutView.vue'
 import LogPlayView from '@/views/RecordPlayView.vue'
 import SuggestView from '@/views/SuggestView.vue'
+import GamesView from '@/views/GamesView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -13,19 +14,24 @@ const router = createRouter({
       component: HomeView
     },
     {
-      path: '/a-propos',
-      name: 'about',
-      component: AboutView
+      path: '/assistant',
+      name: 'suggest',
+      component: SuggestView
     },
     {
-      path: '/enregistrer-partie',
+      path: '/jeux',
+      name: 'games',
+      component: GamesView
+    },
+    {
+      path: '/partie',
       name: 'record-play',
       component: LogPlayView
     },
     {
-      path: '/assistant',
-      name: 'suggest',
-      component: SuggestView
+      path: '/a-propos',
+      name: 'about',
+      component: AboutView
     }
   ]
 })

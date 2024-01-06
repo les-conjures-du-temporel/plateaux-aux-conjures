@@ -45,7 +45,7 @@ export class Database {
   })
   private readonly firestore: Firestore
 
-  constructor(firebaseApp: FirebaseApp, autoUpdateMs: number = 60e3) {
+  constructor(firebaseApp: FirebaseApp, autoUpdateMs: number = 90e3) {
     this.firestore = getFirestore(firebaseApp)
     this.reloadGames()
     this.reloadTranslations()
