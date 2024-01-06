@@ -24,28 +24,20 @@ type Item = {
   icon?: string
   badge?: string
   showSpinner: boolean
+  class?: string
 }
 const items: Ref<Item[]> = ref([])
 let abortController = new AbortController()
-
-const SEARCH_ICON = 'search'
+let lastFilterSearchTerm: string | null = null
 
 function filterGameSearch(term: string, doneFn: (callbackFn: () => void) => void) {
+  lastFilterSearchTerm = term
   abortController.abort()
   abortController = new AbortController()
 
   gameSearcher.searchForAutoComplete(term, abortController.signal, (results, searchingBgg) => {
     doneFn(() => {
       const newItems: Item[] = []
-
-      if (term) {
-        newItems.push({
-          label: 'Montrer tous les résultats',
-          value: term,
-          icon: SEARCH_ICON,
-          showSpinner: false
-        })
-      }
 
       for (const result of results) {
         newItems.push({
@@ -79,15 +71,6 @@ watch(selectedItem, async (newItem) => {
   selectedItem.value = null
   if (!newItem) {
     return
-  } else if (newItem.icon === SEARCH_ICON) {
-    state.value = 'loading'
-    try {
-      fullSearchResults.value = await gameSearcher.doFullSearch(newItem.value)
-      state.value = 'full-search'
-    } catch (error) {
-      notifyWarn(error as Error)
-      state.value = 'input'
-    }
   } else {
     state.value = 'loading'
     try {
@@ -100,6 +83,22 @@ watch(selectedItem, async (newItem) => {
     }
   }
 })
+
+function displayFullSearch() {
+  if (lastFilterSearchTerm) {
+    state.value = 'loading'
+    gameSearcher
+      .doFullSearch(lastFilterSearchTerm)
+      .then((result) => {
+        fullSearchResults.value = result
+        state.value = 'full-search'
+      })
+      .catch((error) => {
+        notifyWarn(error as Error)
+        state.value = 'input'
+      })
+  }
+}
 
 function choseGame(game: Game): void {
   emit('input', game)
@@ -125,7 +124,7 @@ function choseGame(game: Game): void {
     dense
   >
     <template v-slot:option="scope">
-      <q-item v-bind="scope.itemProps">
+      <q-item v-bind="scope.itemProps" :class="['auto-complete-item', scope.opt.class]">
         <q-item-section>
           <q-item-label>
             {{ scope.opt.label }}
@@ -140,6 +139,18 @@ function choseGame(game: Game): void {
 
         <q-item-section side v-if="scope.opt.badge">
           <q-badge color="primary" :label="scope.opt.badge" />
+        </q-item-section>
+      </q-item>
+    </template>
+
+    <template v-slot:after-options>
+      <q-item class="bg-secondary text-white" @click="displayFullSearch">
+        <q-item-section>
+          <q-item-label>Montrer tous les résultats</q-item-label>
+        </q-item-section>
+
+        <q-item-section avatar>
+          <q-icon name="search" />
         </q-item-section>
       </q-item>
     </template>
