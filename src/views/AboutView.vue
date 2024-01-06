@@ -1,8 +1,30 @@
 <script setup lang="ts">
 import type { CloudFunctions } from '@/cloud_functions'
-import { inject, type Ref } from 'vue'
+import { inject, ref, type Ref } from 'vue'
+import { resyncCollection } from '@/resync_collection'
+import type { Database } from '@/database'
 
+const db: Database = inject('db')!
+const cloudFunctions: CloudFunctions = inject('cloudFunctions')!
 const passCode: Ref<string | null> = inject('passCode')!
+
+const resyncing: Ref<boolean> = ref(false)
+const resyncLog: Ref<{ message: string; icon: string }[] | null> = ref(null)
+
+function resync() {
+  resyncing.value = true
+  resyncLog.value = []
+  resyncCollection(db, cloudFunctions, (message, level) => {
+    const icon = level === 'info' ? 'info' : 'warning'
+    resyncLog.value?.push({ message, icon })
+  })
+    .then(() => {
+      resyncLog.value?.push({ message: 'Done', icon: 'done' })
+    })
+    .finally(() => {
+      resyncing.value = false
+    })
+}
 </script>
 
 <template>
@@ -46,7 +68,19 @@ const passCode: Ref<string | null> = inject('passCode')!
     color="primary"
     unelevated
     :disable="!passCode"
+    :loading="resyncing"
+    @click="resync"
   />
+
+  <div v-if="resyncLog" class="q-my-sm">
+    Messages:
+    <ul>
+      <li v-for="(log, index) in resyncLog" :key="index">
+        <q-icon :name="log.icon" />
+        {{ log.message }}
+      </li>
+    </ul>
+  </div>
 
   <p class="q-my-sm">
     Les catégories et mécaniques de chaque jeu sont écrites en anglais sur le site de Board Game
