@@ -6,8 +6,8 @@ import type { Game } from '@/database'
  * Return a value between 0 and 1 for each game.
  */
 export class BggRatingScorer {
-  _minBayesRating: number
-  _maxBayesRating: number
+  private readonly minBayesRating: number
+  private readonly maxBayesRating: number
 
   constructor(games: Game[]) {
     let min = Number.POSITIVE_INFINITY
@@ -19,13 +19,13 @@ export class BggRatingScorer {
         max = Math.max(max, bayesAverageRating)
       }
     }
-    this._minBayesRating = min
-    this._maxBayesRating = max
+    this.minBayesRating = min
+    this.maxBayesRating = max
   }
 
   score(games: Game[]): Map<string, number> {
-    const min = this._minBayesRating
-    const max = this._maxBayesRating
+    const min = this.minBayesRating
+    const max = this.maxBayesRating
 
     const scoredGames = new Map()
     for (const game of games) {

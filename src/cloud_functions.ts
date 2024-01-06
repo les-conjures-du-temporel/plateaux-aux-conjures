@@ -2,6 +2,7 @@ import type { FirebaseApp } from 'firebase/app'
 import { getFunctions, httpsCallable, type HttpsCallable } from 'firebase/functions'
 import { ref, type Ref } from 'vue'
 import { normalizeBase32Code } from '@/helpers'
+import type { Game } from '@/database'
 
 export interface Response {
   message: string
@@ -29,44 +30,44 @@ export interface SetTranslationsRequest {
 }
 
 export class CloudFunctions {
-  _passCode: Ref<string | null>
-  _batchUpdateGames: HttpsCallable<BatchUpdateGamesRequest, Response>
-  _recordPlayActivity: HttpsCallable<RecordPlayActivityRequest, Response>
-  _setTranslations: HttpsCallable<SetTranslationsRequest, Response>
+  private readonly passCode: Ref<string | null>
+  private readonly batchUpdateGamesFn: HttpsCallable<BatchUpdateGamesRequest, Response>
+  private readonly recordPlayActivityFn: HttpsCallable<RecordPlayActivityRequest, Response>
+  private readonly setTranslationsFn: HttpsCallable<SetTranslationsRequest, Response>
 
   constructor(firebaseApp: FirebaseApp, passCode: Ref<string | null>) {
-    this._passCode = passCode
+    this.passCode = passCode
 
     // Note: the region must be the same one for the deployed function
     const functions = getFunctions(firebaseApp, 'europe-west1')
-    this._batchUpdateGames = httpsCallable<BatchUpdateGamesRequest, Response>(
+    this.batchUpdateGamesFn = httpsCallable<BatchUpdateGamesRequest, Response>(
       functions,
       'batchUpdateGames'
     )
-    this._recordPlayActivity = httpsCallable<RecordPlayActivityRequest, Response>(
+    this.recordPlayActivityFn = httpsCallable<RecordPlayActivityRequest, Response>(
       functions,
       'recordPlayActivity'
     )
-    this._setTranslations = httpsCallable<SetTranslationsRequest, Response>(
+    this.setTranslationsFn = httpsCallable<SetTranslationsRequest, Response>(
       functions,
       'setTranslations'
     )
   }
 
   async batchUpdateGames(
-    additions: { id: string; value: object }[],
+    additions: { id: string; value: Game }[],
     updates: { id: string; updates: object }[]
   ): Promise<void> {
-    await this._batchUpdateGames({
-      passCode: this._getPassCode(),
+    await this.batchUpdateGamesFn({
+      passCode: this.getPassCode(),
       additions,
       updates
     })
   }
 
   async recordPlayActivity(gameId: string, day: string, location: string): Promise<void> {
-    await this._recordPlayActivity({
-      passCode: this._getPassCode(),
+    await this.recordPlayActivityFn({
+      passCode: this.getPassCode(),
       gameId,
       day,
       location
@@ -74,15 +75,15 @@ export class CloudFunctions {
   }
 
   async setTranslations(translations: { categories: object; mechanics: object }): Promise<void> {
-    await this._setTranslations({
-      passCode: this._getPassCode(),
+    await this.setTranslationsFn({
+      passCode: this.getPassCode(),
       translations
     })
   }
 
-  _getPassCode(): string {
-    if (this._passCode.value) {
-      return normalizeBase32Code(this._passCode.value)
+  private getPassCode(): string {
+    if (this.passCode.value) {
+      return normalizeBase32Code(this.passCode.value)
     }
 
     throw new Error('Missing pass code')

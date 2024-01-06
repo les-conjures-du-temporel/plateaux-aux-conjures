@@ -7,32 +7,32 @@ import type { Game } from '@/database'
  */
 export class PlayersScorer {
   // The minimum number of votes on a give question in order to consider its answers
-  static _minimumVotes: number = 10
+  private static readonly minimumVotes: number = 10
   // The maximum number of players to consider when summarizing poll results.
   // For example, when `10`, polls that end with a question like "more than 6" will have this answer applied to values
   // from 7 through 10. Additionally, polls that have questions like "10", "11" and "more than 11" will have these 3
   // answer combined into a "10". The valid answers will be averaged.
   // This mechanism is used to give reasonable answers to difficult questions like: "is this game compatible with 7+
   // players?". Both the question and the poll will have these unbounded intervals collapsed to a single value.
-  static _maxPlayers: number = 10
-  _scoreByGameAndPlayers: Map<string, Map<number, number>>
+  private static readonly maxPlayers: number = 10
+  private readonly scoreByGameAndPlayers: Map<string, Map<number, number>>
 
   constructor(games: Game[]) {
-    this._scoreByGameAndPlayers = new Map()
+    this.scoreByGameAndPlayers = new Map()
     for (const game of games) {
-      const scoreByPlayers = PlayersScorer._calculateScoreByPlayers(game)
+      const scoreByPlayers = PlayersScorer.calculateScoreByPlayers(game)
 
-      this._scoreByGameAndPlayers.set(game.bgg.id, scoreByPlayers)
+      this.scoreByGameAndPlayers.set(game.bgg.id, scoreByPlayers)
     }
   }
 
-  static _calculateScoreByPlayers(game: Game): Map<number, number> {
+  private static calculateScoreByPlayers(game: Game): Map<number, number> {
     const scoreByPlayers = new Map()
-    let maxPlayers = PlayersScorer._maxPlayers
+    let maxPlayers = PlayersScorer.maxPlayers
 
     for (const poll of game.bgg.playersPolls) {
       const { bestVotes, recommendedVotes, notRecommendedVotes } = poll
-      if (bestVotes + recommendedVotes + notRecommendedVotes < PlayersScorer._minimumVotes) {
+      if (bestVotes + recommendedVotes + notRecommendedVotes < PlayersScorer.minimumVotes) {
         // Not enough answers
         continue
       }
@@ -50,19 +50,19 @@ export class PlayersScorer {
         scoreByPlayers.set(poll.players, score)
         maxPlayers = Math.max(maxPlayers, poll.players)
       } else {
-        // Spread the answer from `N+1` through `_maxPlayers`
+        // Spread the answer from `N+1` through `maxPlayers`
         scoreByPlayers.set(poll.players + 1, score)
         maxPlayers = Math.max(maxPlayers, poll.players + 1)
-        for (let i = poll.players + 2; i <= PlayersScorer._maxPlayers; i++) {
+        for (let i = poll.players + 2; i <= PlayersScorer.maxPlayers; i++) {
           scoreByPlayers.set(i, score)
         }
       }
     }
 
-    // Average answers above `_maxPlayers`
+    // Average answers above `maxPlayers`
     let sum = 0
     let count = 0
-    for (let i = PlayersScorer._maxPlayers; i <= maxPlayers; i++) {
+    for (let i = PlayersScorer.maxPlayers; i <= maxPlayers; i++) {
       const score = scoreByPlayers.get(i)
       if (score !== undefined) {
         sum += score
@@ -71,7 +71,7 @@ export class PlayersScorer {
       }
     }
     if (count > 0) {
-      scoreByPlayers.set(PlayersScorer._maxPlayers, sum / count)
+      scoreByPlayers.set(PlayersScorer.maxPlayers, sum / count)
     }
 
     return scoreByPlayers
@@ -81,7 +81,7 @@ export class PlayersScorer {
     const scoredGames = new Map()
 
     for (const game of games) {
-      const scoreByPlayers = this._scoreByGameAndPlayers.get(game.bgg.id)
+      const scoreByPlayers = this.scoreByGameAndPlayers.get(game.bgg.id)
       if (scoreByPlayers) {
         let rawScore = 0
         for (const players of playersSet) {

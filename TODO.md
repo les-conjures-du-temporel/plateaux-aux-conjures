@@ -1,1 +1,0 @@
-- replace all methods with `_` as private

@@ -14,18 +14,18 @@ export interface SearchHit {
 export type SearchResultsCallback = (hits: SearchHit[], searchingBgg: boolean) => void
 
 export class GameSearcher {
-  _games: Ref<Game[]>
-  _localGames: ComputedRef<{ text: string; game: Game }[]>
-  _bggSearchCache: Map<string, BggSearchHit[]> = new Map()
-  _bggGameCache: Map<string, Game> = new Map()
+  private readonly games: Ref<Game[]>
+  private readonly localGames: ComputedRef<{ text: string; game: Game }[]>
+  private readonly bggSearchCache: Map<string, BggSearchHit[]> = new Map()
+  private readonly bggGameCache: Map<string, Game> = new Map()
   bggDebounce: number = 1000
   maxResults: number = 7
   maxFullResults: number = 40
 
   constructor(games: Ref<Game[]>) {
-    this._games = games
-    this._localGames = computed(() => {
-      return GameSearcher._calculateLocalGames(games.value)
+    this.games = games
+    this.localGames = computed(() => {
+      return GameSearcher.calculateLocalGames(games.value)
     })
   }
 
@@ -44,9 +44,9 @@ export class GameSearcher {
     abortSignal: AbortSignal,
     resultsCallback: SearchResultsCallback
   ): void {
-    const normalizedTerm = GameSearcher._normalizeText(term)
+    const normalizedTerm = GameSearcher.normalizeText(term)
 
-    const localGames = this._localGames.value
+    const localGames = this.localGames.value
     const hitIds = new Set()
     const hits: SearchHit[] = []
 
@@ -95,7 +95,7 @@ export class GameSearcher {
     // Dispatch search on BGG
     resultsCallback(hits.slice(), true)
 
-    this._searchBgg(term, abortSignal, this.bggDebounce)
+    this.searchBgg(term, abortSignal, this.bggDebounce)
       .then((bggHits) => {
         const idsOwnedByClub = new Set(
           localGames.filter((game) => game.game.ownedByClub).map((game) => game.game.bgg.id)
@@ -128,19 +128,19 @@ export class GameSearcher {
    * Do a full search using local and remote games
    */
   async doFullSearch(term: string): Promise<Game[]> {
-    const gameById = new Map(this._games.value.map((game) => [game.bgg.id, game]))
+    const gameById = new Map(this.games.value.map((game) => [game.bgg.id, game]))
 
-    const bggHits = await this._searchBgg(term, new AbortController().signal, 0)
+    const bggHits = await this.searchBgg(term, new AbortController().signal, 0)
     bggHits.splice(this.maxFullResults, Number.MAX_SAFE_INTEGER)
 
     // Load missing games from BGG
     const missingGameIds = []
     for (const bggHit of bggHits) {
-      if (!gameById.has(bggHit.id) && !this._bggGameCache.has(bggHit.id)) {
+      if (!gameById.has(bggHit.id) && !this.bggGameCache.has(bggHit.id)) {
         missingGameIds.push(bggHit.id)
       }
     }
-    await this._populateBggGameCache(missingGameIds)
+    await this.populateBggGameCache(missingGameIds)
 
     const hits: Game[] = []
     for (const bggHit of bggHits) {
@@ -148,7 +148,7 @@ export class GameSearcher {
       if (game) {
         hits.push(game)
       } else {
-        const bggGame = this._bggGameCache.get(bggHit.id)
+        const bggGame = this.bggGameCache.get(bggHit.id)
         if (bggGame) {
           hits.push(bggGame)
         }
@@ -162,19 +162,19 @@ export class GameSearcher {
    * Load the game information, from either the local db, local cache or BGG
    */
   async loadGame(id: string): Promise<Game> {
-    for (const game of this._games.value) {
+    for (const game of this.games.value) {
       if (game.bgg.id === id) {
         return game
       }
     }
 
-    let game = this._bggGameCache.get(id)
+    let game = this.bggGameCache.get(id)
     if (game) {
       return game
     }
 
-    await this._populateBggGameCache([id])
-    game = this._bggGameCache.get(id)
+    await this.populateBggGameCache([id])
+    game = this.bggGameCache.get(id)
     if (!game) {
       throw new Error('Could not load game information')
     }
@@ -184,8 +184,8 @@ export class GameSearcher {
   /**
    * Search BGG after a delay or, if the results are cached, return them immediately
    */
-  async _searchBgg(term: string, abortSignal: AbortSignal, bggDebounce: number) {
-    const cached = this._bggSearchCache.get(term)
+  private async searchBgg(term: string, abortSignal: AbortSignal, bggDebounce: number) {
+    const cached = this.bggSearchCache.get(term)
     if (cached) {
       return cached
     }
@@ -200,32 +200,32 @@ export class GameSearcher {
       return []
     }
 
-    this._bggSearchCache.set(term, bggHits)
+    this.bggSearchCache.set(term, bggHits)
     return bggHits
   }
 
-  static _calculateLocalGames(games: Game[]): { text: string; game: Game }[] {
+  private static calculateLocalGames(games: Game[]): { text: string; game: Game }[] {
     return games.map((game) => {
       const names = [game.name, game.bgg.primaryName, ...game.bgg.secondaryNames]
       const text = names.join(' ')
-      return { text: GameSearcher._normalizeText(text), game }
+      return { text: GameSearcher.normalizeText(text), game }
     })
   }
 
   /**
    * Remove diacritics and other non-latin letters
    */
-  static _normalizeText(text: string): string {
+  private static normalizeText(text: string): string {
     return text
       .normalize('NFKD')
       .toLowerCase()
       .replace(/[^a-z0-9 ]/g, '')
   }
 
-  async _populateBggGameCache(ids: string[]) {
+  private async populateBggGameCache(ids: string[]) {
     const missingGames = await getGamesInBatches(ids, () => {})
     for (const missingGame of missingGames) {
-      this._bggGameCache.set(missingGame.id, buildGameFromBggGame(missingGame, false))
+      this.bggGameCache.set(missingGame.id, buildGameFromBggGame(missingGame, false))
     }
   }
 }

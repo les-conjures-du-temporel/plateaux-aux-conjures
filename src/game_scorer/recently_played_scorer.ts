@@ -4,8 +4,8 @@ import type { Game } from '@/database'
  * Boost games that were played recently
  */
 export class RecentlyPlayedScorer {
-  _playedLastMonthScore: number = 1
-  _playedLastSixMonthsScore: number = 0.5
+  private readonly playedLastMonthScore: number = 1
+  private readonly playedLastSixMonthsScore: number = 0.5
 
   score(games: Game[]): Map<string, number> {
     const now = Date.now()
@@ -17,9 +17,9 @@ export class RecentlyPlayedScorer {
         const months = time / 3600e3 / 24 / 30
 
         if (months <= 1) {
-          scoredGames.set(game.bgg.id, this._playedLastMonthScore)
+          scoredGames.set(game.bgg.id, this.playedLastMonthScore)
         } else if (months <= 6) {
-          scoredGames.set(game.bgg.id, this._playedLastSixMonthsScore)
+          scoredGames.set(game.bgg.id, this.playedLastSixMonthsScore)
         }
       }
     }
@@ -32,7 +32,7 @@ function parseDate(date: string | null): Date | null {
   if (!match) {
     return null
   }
-  const [_, yearStr, monthStr, dayStr] = match
+  const [, yearStr, monthStr, dayStr] = match
   try {
     const year = Number.parseInt(yearStr)
     const month = Number.parseInt(monthStr)

@@ -22,13 +22,13 @@ export type Interval = [number, number]
  */
 export class PlayTimeScorer {
   // The score when the value is not known
-  _unknownScore = 0.5
+  private readonly unknownScore = 0.5
 
   score(games: Game[], playersSet: Set<number>, playTimeCriteria: Interval[]): Map<string, number> {
     const scoredGames = new Map()
 
     for (const game of games) {
-      scoredGames.set(game.bgg.id, this._scoreGame(game, playersSet, playTimeCriteria))
+      scoredGames.set(game.bgg.id, this.scoreGame(game, playersSet, playTimeCriteria))
     }
 
     return scoredGames
@@ -38,10 +38,10 @@ export class PlayTimeScorer {
    * Return 1 if the play time is likely to be respected for the given number of players, 0 if not and `null` if
    * unknown.
    */
-  _scoreGame(game: Game, playersSet: Set<number>, playTimeCriteria: Interval[]): number {
+  private scoreGame(game: Game, playersSet: Set<number>, playTimeCriteria: Interval[]): number {
     const { minPlayers, maxPlayers, minPlayTimeMinutes, maxPlayTimeMinutes } = game.bgg
     if (!minPlayers || !maxPlayers || !minPlayTimeMinutes || !maxPlayTimeMinutes) {
-      return this._unknownScore
+      return this.unknownScore
     }
 
     let rawScore = 0
@@ -63,6 +63,6 @@ export class PlayTimeScorer {
       counts += playTimeCriteria.length
     }
 
-    return counts === 0 ? this._unknownScore : rawScore / counts
+    return counts === 0 ? this.unknownScore : rawScore / counts
   }
 }

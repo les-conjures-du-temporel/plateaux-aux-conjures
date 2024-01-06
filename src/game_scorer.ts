@@ -34,33 +34,33 @@ export type ScoredGame = {
  * tweaked.
  */
 export class GameScorer {
-  _bggRatingScorer: BggRatingScorer
-  _favoriteMatchScorer: FavoriteMatchScorer
-  _playTimeScorer: PlayTimeScorer
-  _playersScorer: PlayersScorer
-  _randomDailyScorer: RandomDailyScorer
-  _recentlyPlayedScorer: RecentlyPlayedScorer
+  private readonly bggRatingScorer: BggRatingScorer
+  private readonly favoriteMatchScorer: FavoriteMatchScorer
+  private readonly playTimeScorer: PlayTimeScorer
+  private readonly playersScorer: PlayersScorer
+  private readonly randomDailyScorer: RandomDailyScorer
+  private readonly recentlyPlayedScorer: RecentlyPlayedScorer
 
   // === Tweaks to the boosting logic ===
-  _bggRatingBoost: number = 0.2
-  _favoriteMatchBoost: number = 1
-  _playTimeBoost: number = 0.5
-  _playersBoost: number = 0.5
-  _randomDailyBoost: number = 0.25
-  _recentlyPlayedBoost: number = 0.25
+  private readonly bggRatingBoost: number = 0.2
+  private readonly favoriteMatchBoost: number = 1
+  private readonly playTimeBoost: number = 0.5
+  private readonly playersBoost: number = 0.5
+  private readonly randomDailyBoost: number = 0.25
+  private readonly recentlyPlayedBoost: number = 0.25
 
   // Mark this amount of the top percentage in each score
-  _relevancyPercentile: number = 20
+  private readonly relevancyPercentile: number = 20
 
   constructor(games: Game[]) {
     console.time('new GameScorer')
 
-    this._bggRatingScorer = new BggRatingScorer(games)
-    this._favoriteMatchScorer = new FavoriteMatchScorer(games)
-    this._playTimeScorer = new PlayTimeScorer()
-    this._playersScorer = new PlayersScorer(games)
-    this._randomDailyScorer = new RandomDailyScorer(games)
-    this._recentlyPlayedScorer = new RecentlyPlayedScorer()
+    this.bggRatingScorer = new BggRatingScorer(games)
+    this.favoriteMatchScorer = new FavoriteMatchScorer(games)
+    this.playTimeScorer = new PlayTimeScorer()
+    this.playersScorer = new PlayersScorer(games)
+    this.randomDailyScorer = new RandomDailyScorer(games)
+    this.recentlyPlayedScorer = new RecentlyPlayedScorer()
 
     console.timeEnd('new GameScorer')
   }
@@ -72,12 +72,12 @@ export class GameScorer {
     playTimeCriteria: Interval[]
   ): ScoredGame[] {
     console.time('GameScorer.score')
-    const bggRatingScoreByGame = this._bggRatingScorer.score(games)
-    const favoriteMatchScoreByGame = this._favoriteMatchScorer.score(games, favoriteGames)
-    const playTimeScoreByGame = this._playTimeScorer.score(games, playersSet, playTimeCriteria)
-    const playersScoreByGame = this._playersScorer.score(games, playersSet)
-    const randomDailyScoreByGame = this._randomDailyScorer.score(games)
-    const recentlyPlayedScoreByGame = this._recentlyPlayedScorer.score(games)
+    const bggRatingScoreByGame = this.bggRatingScorer.score(games)
+    const favoriteMatchScoreByGame = this.favoriteMatchScorer.score(games, favoriteGames)
+    const playTimeScoreByGame = this.playTimeScorer.score(games, playersSet, playTimeCriteria)
+    const playersScoreByGame = this.playersScorer.score(games, playersSet)
+    const randomDailyScoreByGame = this.randomDailyScorer.score(games)
+    const recentlyPlayedScoreByGame = this.recentlyPlayedScorer.score(games)
 
     const scoredGames: ScoredGame[] = []
     for (const game of games) {
@@ -95,12 +95,12 @@ export class GameScorer {
       }
 
       const score =
-        bggRatingScore * this._bggRatingBoost +
-        favoriteMatchScore * this._favoriteMatchBoost +
-        playTimeScore * this._playTimeBoost +
-        playersScore * this._playersBoost +
-        randomDailyScore * this._randomDailyBoost +
-        recentlyPlayedScore * this._recentlyPlayedBoost
+        bggRatingScore * this.bggRatingBoost +
+        favoriteMatchScore * this.favoriteMatchBoost +
+        playTimeScore * this.playTimeBoost +
+        playersScore * this.playersBoost +
+        randomDailyScore * this.randomDailyBoost +
+        recentlyPlayedScore * this.recentlyPlayedBoost
 
       scoredGames.push({
         game,
@@ -118,25 +118,25 @@ export class GameScorer {
     scoredGames.sort((a, b) => b.score - a.score)
 
     // Detect which components were the most relevant
-    this._detectRelevant(scoredGames, 'bggRating', (game) => game.bggRatingScore)
-    this._detectRelevant(scoredGames, 'favoriteMatch', (game) => game.favoriteMatchScore)
-    this._detectRelevant(scoredGames, 'playTime', (game) => game.playTimeScore)
-    this._detectRelevant(scoredGames, 'players', (game) => game.playersScore)
-    this._detectRelevant(scoredGames, 'randomDaily', (game) => game.randomDailyScore)
-    this._detectRelevant(scoredGames, 'recentlyPlayed', (game) => game.recentlyPlayedScore)
+    this.detectRelevant(scoredGames, 'bggRating', (game) => game.bggRatingScore)
+    this.detectRelevant(scoredGames, 'favoriteMatch', (game) => game.favoriteMatchScore)
+    this.detectRelevant(scoredGames, 'playTime', (game) => game.playTimeScore)
+    this.detectRelevant(scoredGames, 'players', (game) => game.playersScore)
+    this.detectRelevant(scoredGames, 'randomDaily', (game) => game.randomDailyScore)
+    this.detectRelevant(scoredGames, 'recentlyPlayed', (game) => game.recentlyPlayedScore)
 
     console.timeEnd('GameScorer.score')
     return scoredGames
   }
 
-  _detectRelevant(
+  private detectRelevant(
     scoredGames: ScoredGame[],
     kind: ScoreKind,
     getValue: (game: ScoredGame) => number
   ): void {
     const sortedScores = scoredGames.map(getValue).sort((a, b) => a - b)
     const relevancyIndex = Math.floor(
-      (sortedScores.length - 1) * (1 - this._relevancyPercentile / 100)
+      (sortedScores.length - 1) * (1 - this.relevancyPercentile / 100)
     )
     const thresholdScore = sortedScores[relevancyIndex]
 

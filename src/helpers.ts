@@ -27,7 +27,7 @@ export function formatDate(date: string): string {
   if (!match) {
     return date
   }
-  const [_, year, month, day] = match
+  const [, year, month, day] = match
   return `${day}/${month}/${year}`
 }
 

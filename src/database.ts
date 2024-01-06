@@ -43,10 +43,10 @@ export class Database {
     categories: new Map(),
     mechanics: new Map()
   })
-  _firestore: Firestore
+  private readonly firestore: Firestore
 
   constructor(firebaseApp: FirebaseApp, autoUpdateMs: number = 60e3) {
-    this._firestore = getFirestore(firebaseApp)
+    this.firestore = getFirestore(firebaseApp)
     this.reloadGames()
     this.reloadTranslations()
 
@@ -58,7 +58,7 @@ export class Database {
   reloadGames() {
     this.games.value = []
 
-    this._getGames()
+    this.getGames()
       .then((loadedGames) => {
         this.games.value = loadedGames
       })
@@ -73,7 +73,7 @@ export class Database {
       mechanics: new Map()
     }
 
-    this._getTranslations()
+    this.getTranslations()
       .then((loadedTranslations) => {
         this.translations.value = loadedTranslations
       })
@@ -85,13 +85,13 @@ export class Database {
   /**
    * Return all the games from the database
    */
-  async _getGames() {
-    const gameQuerySnapshot = await getDocs(collection(this._firestore, 'games'))
+  private async getGames() {
+    const gameQuerySnapshot = await getDocs(collection(this.firestore, 'games'))
     return gameQuerySnapshot.docs.map((doc) => doc.data() as Game)
   }
 
-  async _getTranslations(): Promise<Translations> {
-    const translationsDoc = await getDoc(doc(this._firestore, 'translations', 'translations'))
+  private async getTranslations(): Promise<Translations> {
+    const translationsDoc = await getDoc(doc(this.firestore, 'translations', 'translations'))
     const translationsData = translationsDoc.data() || {}
 
     function extractMap(value: any): Map<string, string> {
@@ -118,7 +118,7 @@ export class Database {
       mechanics: Object.fromEntries(translations.mechanics.entries())
     }
 
-    await setDoc(doc(this._firestore, 'translations', 'translations'), asObject)
+    await setDoc(doc(this.firestore, 'translations', 'translations'), asObject)
   }
 
   // Return when the last sync operation was done

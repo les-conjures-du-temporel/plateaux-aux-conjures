@@ -1,14 +1,19 @@
 import { getGamesInBatches, listGamesInUserCollection } from '@/board_game_geek'
 import { boardGameGeekUser } from '@/config'
-import type { Database, Game } from '@/database'
+import type { Database } from '@/database'
 import { buildGameFromBggGame } from '@/helpers'
+import type { CloudFunctions } from '@/cloud_functions'
 
 export type ProgressCallback = (message: string, level: 'info' | 'warn') => void
 
 /**
  * Updates the database with the games from the board game geek collection
  */
-export async function resyncCollection(db: Database, progressCallback: ProgressCallback) {
+export async function resyncCollection(
+  db: Database,
+  cloudFunctions: CloudFunctions,
+  progressCallback: ProgressCallback
+) {
   // Extract current data from db
   const staleGamesList = db.games.value
   const staleGames = new Map(staleGamesList.map((game) => [game.bgg.id, game]))
@@ -22,8 +27,8 @@ export async function resyncCollection(db: Database, progressCallback: ProgressC
   const bggGames = new Map(bggGamesList.map((game) => [game.id, game]))
 
   // Detect what to do with each game
-  const gamesToAdd: Game[] = []
-  const gamesToUpdate = new Map()
+  const gamesToAdd = []
+  const gamesToUpdate = []
   for (const id of allBggIds) {
     const bggGame = bggGames.get(id)
     if (!bggGame) {
@@ -34,22 +39,25 @@ export async function resyncCollection(db: Database, progressCallback: ProgressC
     const staleGame = staleGames.get(id)
     const novelGameName = novelGameById.get(id)?.name
     if (!staleGame) {
-      gamesToAdd.push(buildGameFromBggGame(bggGame, true, novelGameName))
+      const value = buildGameFromBggGame(bggGame, true, novelGameName)
+      gamesToAdd.push({ id, value })
     } else {
-      gamesToUpdate.set(id, {
-        bgg: bggGame,
-        ownedByClub: novelGameById.has(id),
-        name: novelGameName || staleGame.name
+      gamesToUpdate.push({
+        id,
+        updates: {
+          bgg: bggGame,
+          ownedByClub: novelGameById.has(id),
+          name: novelGameName || staleGame.name
+        }
       })
     }
   }
 
   progressCallback(
-    `Will insert ${gamesToAdd.length} and update ${gamesToUpdate.size} games`,
+    `Will insert ${gamesToAdd.length} and update ${gamesToUpdate.length} games`,
     'info'
   )
-  await db.batchAdd(gamesToAdd)
-  await db.batchUpdate(gamesToUpdate)
+  await cloudFunctions.batchUpdateGames(gamesToAdd, gamesToUpdate)
 
   progressCallback('Done', 'info')
 }
