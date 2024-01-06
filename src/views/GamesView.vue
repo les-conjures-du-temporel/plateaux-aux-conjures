@@ -14,21 +14,19 @@ const recentGames = computed(() => {
 </script>
 
 <template>
-  <div class="q-pa-sm">
-    <p>
-      Sur cette page tu trouves une liste des jeux récemment joués chez nous et d'autres jeux dans
-      notre collection.
-    </p>
+  <p>
+    Sur cette page tu trouves une liste des jeux récemment joués chez nous et d'autres jeux dans
+    notre collection.
+  </p>
 
-    <div class="text-center" v-if="games.length === 0">
-      <q-spinner color="primary" size="5em" />
-    </div>
-
-    <template v-for="(game, index) in recentGames" :key="game.bgg.id">
-      <q-separator v-if="index > 0" color="secondary" />
-      <game-item :game="game" show-total-plays />
-    </template>
+  <div class="text-center" v-if="games.length === 0">
+    <q-spinner color="primary" size="5em" />
   </div>
+
+  <template v-for="(game, index) in recentGames" :key="game.bgg.id">
+    <q-separator v-if="index > 0" color="secondary" />
+    <game-item :game="game" show-total-plays />
+  </template>
 </template>
 
 <style scoped></style>

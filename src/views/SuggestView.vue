@@ -157,129 +157,127 @@ function addFavoriteGame(game: Game): void {
 </script>
 
 <template>
-  <div class="q-pa-md">
-    <p>
-      Envie de lancer une partie, mais tu ne sais pas trop quel jeu prendre ?<br />
-      Laisse-moi t'aider à trouver ton bonheur dans notre bibliothèque
-    </p>
+  <p>
+    Envie de lancer une partie, mais tu ne sais pas trop quel jeu prendre ?<br />
+    Laisse-moi t'aider à trouver ton bonheur dans notre bibliothèque
+  </p>
 
-    <q-card>
-      <q-tabs
-        v-model="tab"
-        class="text-grey"
-        active-color="primary"
-        indicator-color="primary"
-        align="justify"
-        narrow-indicator
-        mobile-arrows
-        outside-arrows
-      >
-        <q-tab
-          name="players"
-          label="Joueurs"
-          icon="groups"
-          no-caps
-          :alert="criteriaPlayers.length ? 'accent' : false"
-        />
-        <q-tab
-          name="playTime"
-          label="Temps"
-          icon="schedule"
-          no-caps
-          :alert="criteriaPlayTime.length ? 'accent' : false"
-        />
-        <q-tab
-          name="age"
-          label="Age"
-          icon="family_restroom"
-          no-caps
-          :alert="criteriaAge ? 'accent' : false"
-        />
-        <q-tab
-          name="weight"
-          label="Complexité"
-          icon="psychology"
-          no-caps
-          :alert="criteriaWeight.length ? 'accent' : false"
-        />
-        <q-tab
-          name="favoriteGames"
-          label="Favoris"
-          icon="thumb_up"
-          no-caps
-          :alert="criteriaFavoriteGames.length ? 'accent' : false"
-        />
-      </q-tabs>
+  <q-card>
+    <q-tabs
+      v-model="tab"
+      class="text-grey"
+      active-color="primary"
+      indicator-color="primary"
+      align="justify"
+      narrow-indicator
+      mobile-arrows
+      outside-arrows
+    >
+      <q-tab
+        name="players"
+        label="Joueurs"
+        icon="groups"
+        no-caps
+        :alert="criteriaPlayers.length ? 'accent' : false"
+      />
+      <q-tab
+        name="playTime"
+        label="Temps"
+        icon="schedule"
+        no-caps
+        :alert="criteriaPlayTime.length ? 'accent' : false"
+      />
+      <q-tab
+        name="age"
+        label="Age"
+        icon="family_restroom"
+        no-caps
+        :alert="criteriaAge ? 'accent' : false"
+      />
+      <q-tab
+        name="weight"
+        label="Complexité"
+        icon="psychology"
+        no-caps
+        :alert="criteriaWeight.length ? 'accent' : false"
+      />
+      <q-tab
+        name="favoriteGames"
+        label="Favoris"
+        icon="thumb_up"
+        no-caps
+        :alert="criteriaFavoriteGames.length ? 'accent' : false"
+      />
+    </q-tabs>
 
-      <q-separator />
+    <q-separator />
 
-      <q-tab-panels v-model="tab" animated>
-        <q-tab-panel name="players">
-          <p>Vous êtes combien ?</p>
-          <div class="q-gutter-sm">
-            <q-option-group
-              v-model="criteriaPlayers"
-              :options="criteriaPlayersOptions"
-              inline
-              type="checkbox"
-            />
-          </div>
-        </q-tab-panel>
-
-        <q-tab-panel name="playTime">
-          <p>Vous avez combien de temps ?</p>
+    <q-tab-panels v-model="tab" animated>
+      <q-tab-panel name="players">
+        <p>Vous êtes combien ?</p>
+        <div class="q-gutter-sm">
           <q-option-group
-            v-model="criteriaPlayTime"
-            :options="criteriaPlayTimeOptions"
+            v-model="criteriaPlayers"
+            :options="criteriaPlayersOptions"
+            inline
             type="checkbox"
           />
-        </q-tab-panel>
+        </div>
+      </q-tab-panel>
 
-        <q-tab-panel name="age">
-          <p>A partir de quel âge ?</p>
-          <div class="q-gutter-sm">
-            <q-option-group v-model="criteriaAge" :options="criteriaAgeOptions" inline />
-          </div>
-        </q-tab-panel>
+      <q-tab-panel name="playTime">
+        <p>Vous avez combien de temps ?</p>
+        <q-option-group
+          v-model="criteriaPlayTime"
+          :options="criteriaPlayTimeOptions"
+          type="checkbox"
+        />
+      </q-tab-panel>
 
-        <q-tab-panel name="weight">
-          <p>Quel niveau de complexité ?</p>
-          <div class="q-gutter-sm">
-            <q-option-group
-              v-model="criteriaWeight"
-              :options="criteriaWeightOptions"
-              type="checkbox"
-            />
-          </div>
-        </q-tab-panel>
+      <q-tab-panel name="age">
+        <p>A partir de quel âge ?</p>
+        <div class="q-gutter-sm">
+          <q-option-group v-model="criteriaAge" :options="criteriaAgeOptions" inline />
+        </div>
+      </q-tab-panel>
 
-        <q-tab-panel name="favoriteGames">
-          <p>
-            Quels sont vos jeux favoris ?<br />
-            <span class="text-caption"
-              >Peut-être on aura un jeu avec une mécanique, théme ou créateurs similaires</span
-            >
-          </p>
+      <q-tab-panel name="weight">
+        <p>Quel niveau de complexité ?</p>
+        <div class="q-gutter-sm">
+          <q-option-group
+            v-model="criteriaWeight"
+            :options="criteriaWeightOptions"
+            type="checkbox"
+          />
+        </div>
+      </q-tab-panel>
 
-          <ul v-for="(game, index) in criteriaFavoriteGames" :key="game.bgg.id">
-            <li>
-              {{ game.name }}
-              <q-btn
-                icon="cancel"
-                unelevated
-                size="sm"
-                @click="criteriaFavoriteGames.splice(index, 1)"
-              ></q-btn>
-            </li>
-          </ul>
+      <q-tab-panel name="favoriteGames">
+        <p>
+          Quels sont vos jeux favoris ?<br />
+          <span class="text-caption"
+            >Peut-être on aura un jeu avec une mécanique, théme ou créateurs similaires</span
+          >
+        </p>
 
-          <p v-if="criteriaFavoriteGames.length">Tu peux en ajouter d'autres si tu veux :</p>
+        <ul v-for="(game, index) in criteriaFavoriteGames" :key="game.bgg.id">
+          <li>
+            {{ game.name }}
+            <q-btn
+              icon="cancel"
+              unelevated
+              size="sm"
+              @click="criteriaFavoriteGames.splice(index, 1)"
+            ></q-btn>
+          </li>
+        </ul>
 
-          <search-game @input="addFavoriteGame" />
-        </q-tab-panel>
-      </q-tab-panels>
-    </q-card>
-  </div>
+        <p v-if="criteriaFavoriteGames.length">Tu peux en ajouter d'autres si tu veux :</p>
+
+        <search-game @input="addFavoriteGame" />
+      </q-tab-panel>
+    </q-tab-panels>
+  </q-card>
 
   <div class="text-center" v-if="games.length === 0">
     <q-spinner color="primary" size="5em" />

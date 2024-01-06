@@ -50,11 +50,13 @@ function toggleLeftDrawer() {
     </q-drawer>
 
     <q-page-container>
-      <router-view v-slot="{ Component }">
-        <keep-alive>
-          <component :is="Component" />
-        </keep-alive>
-      </router-view>
+      <div class="q-pa-sm">
+        <router-view v-slot="{ Component }">
+          <keep-alive>
+            <component :is="Component" />
+          </keep-alive>
+        </router-view>
+      </div>
     </q-page-container>
 
     <q-footer class="bg-grey-8 text-white">
