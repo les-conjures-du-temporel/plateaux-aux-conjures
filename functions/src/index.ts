@@ -70,7 +70,7 @@ exports.recordPlayActivity = onCall(
       throw new HttpsError('invalid-argument', 'Invalid game id')
     } else if (!day.match(/^\d{4}-\d\d-\d\d$/)) {
       throw new HttpsError('invalid-argument', 'Invalid day')
-    } else if (!['club', 'home', 'festival'].includes(location)) {
+    } else if (!['club', 'home', 'festival', 'other'].includes(location)) {
       throw new HttpsError('invalid-argument', 'Invalid location')
     }
 
