@@ -3,6 +3,7 @@ import type { CloudFunctions } from '@/cloud_functions'
 import { inject, ref, type Ref } from 'vue'
 import { resyncCollection } from '@/resync_collection'
 import type { Database } from '@/database'
+import { notifyError } from '@/helpers'
 
 const db: Database = inject('db')!
 const cloudFunctions: CloudFunctions = inject('cloudFunctions')!
@@ -27,6 +28,55 @@ function resync() {
     .finally(() => {
       resyncing.value = false
     })
+}
+
+const downloadingPlays: Ref<boolean> = ref(false)
+
+function downloadPlays() {
+  downloadingPlays.value = true
+
+  doDownloadPlays()
+    .catch((error) => {
+      notifyError(error)
+    })
+    .finally(() => {
+      downloadingPlays.value = false
+    })
+}
+
+async function doDownloadPlays() {
+  const gameNameById = new Map()
+  for (const game of db.games.value) {
+    gameNameById.set(game.bgg.id, game.name)
+  }
+
+  const playActivities = await db.getPlayActivities()
+  const csvRows = [['Jeu', 'Id BGG', 'Quand', 'Où']]
+  for (const activity of playActivities) {
+    const gameName = gameNameById.get(activity.gameId) || ''
+    csvRows.push([gameName, activity.gameId, activity.day, activity.location])
+  }
+  const csvText = toCSV(csvRows)
+
+  const hiddenElement = document.createElement('a')
+  hiddenElement.href = 'data:text/csv;charset=utf-8,' + encodeURI(csvText)
+  hiddenElement.download = 'parties.csv'
+  hiddenElement.click()
+}
+
+function toCSV(rows: string[][]): string {
+  return rows
+    .map((cells) => {
+      return cells
+        .map((cell) => {
+          if (!cell.match(/[,\n"]/)) {
+            return '"' + cell.replace(/"/g, '\\"') + '"'
+          }
+          return cell
+        })
+        .join(',')
+    })
+    .join('\n')
 }
 </script>
 
@@ -102,7 +152,14 @@ function resync() {
     Pour extraire toutes les informations présentes sur l'application c'est par ici. Ceci est utile
     si tu veux faire des analyses des parties enregistrées :
   </p>
-  <q-btn label="Télécharger les parties" no-caps color="primary" unelevated />
+  <q-btn
+    label="Télécharger les parties"
+    no-caps
+    color="primary"
+    unelevated
+    @click="downloadPlays()"
+    :loading="downloadingPlays"
+  />
 </template>
 
 <style scoped></style>

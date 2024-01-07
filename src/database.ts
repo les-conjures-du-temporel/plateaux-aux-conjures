@@ -7,8 +7,8 @@ import {
   getDoc,
   getDocs,
   getFirestore,
-  writeBatch,
-  setDoc
+  setDoc,
+  collectionGroup
 } from 'firebase/firestore'
 import type { Ref } from 'vue'
 import { ref } from 'vue'
@@ -36,6 +36,12 @@ export interface Translations {
 }
 
 export type PlayLocation = 'club' | 'home' | 'festival' | 'other'
+
+export interface PlayActivity {
+  gameId: string
+  day: string
+  location: PlayLocation
+}
 
 export class Database {
   games: Ref<Game[]> = ref([])
@@ -131,8 +137,12 @@ export class Database {
     await setDoc(doc(this.firestore, 'translations', 'translations'), asObject)
   }
 
-  // Return when the last sync operation was done
-  async getLastSync() {
-    // TODO
+  async getPlayActivities(): Promise<PlayActivity[]> {
+    const querySnapshot = await getDocs(collectionGroup(this.firestore, 'playActivities'))
+    return querySnapshot.docs.map((doc) => ({
+      gameId: doc.ref.parent.parent!.id,
+      day: doc.data().day,
+      location: doc.data().location
+    }))
   }
 }
