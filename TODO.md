@@ -1,0 +1,2 @@
+- configure emulators to run locally
+- document how to develop this codebase
