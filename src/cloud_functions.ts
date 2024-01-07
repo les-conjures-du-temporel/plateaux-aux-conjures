@@ -1,6 +1,6 @@
 import type { FirebaseApp } from 'firebase/app'
 import { getFunctions, httpsCallable, type HttpsCallable } from 'firebase/functions'
-import { ref, type Ref } from 'vue'
+import { type Ref } from 'vue'
 import { normalizeBase32Code } from '@/helpers'
 import type { Game } from '@/database'
 
@@ -24,8 +24,8 @@ export interface RecordPlayActivityRequest {
 export interface SetTranslationsRequest {
   passCode: string
   translations: {
-    categories: object
-    mechanics: object
+    categories: { [key: string]: string }
+    mechanics: { [key: string]: string }
   }
 }
 
@@ -74,7 +74,10 @@ export class CloudFunctions {
     })
   }
 
-  async setTranslations(translations: { categories: object; mechanics: object }): Promise<void> {
+  async setTranslations(translations: {
+    categories: { [key: string]: string }
+    mechanics: { [key: string]: string }
+  }): Promise<void> {
     await this.setTranslationsFn({
       passCode: this.getPassCode(),
       translations
