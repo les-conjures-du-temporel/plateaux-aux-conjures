@@ -92,7 +92,13 @@ function onClickHeader() {
 <template>
   <q-card flat class="q-my-sm">
     <q-card-section horizontal @click="onClickHeader">
-      <q-img v-if="game.bgg.thumbnail" :src="game.bgg.thumbnail" class="col-3" fit="scale-down" />
+      <q-img
+        v-if="game.bgg.thumbnail"
+        :src="game.bgg.thumbnail"
+        class="col-3"
+        fit="scale-down"
+        height="140px"
+      />
 
       <q-card-section class="col-9">
         <span class="text-h6">{{ game.name }}</span>

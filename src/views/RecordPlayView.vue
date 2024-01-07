@@ -118,7 +118,7 @@ async function doSave() {
 
   game.value = null
 
-  db.reloadGames()
+  db.reloadGames(false)
   await router.push({ name: 'home' })
 }
 </script>

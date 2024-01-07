@@ -51,13 +51,13 @@ function toggleLeftDrawer() {
     </q-drawer>
 
     <q-page-container>
-      <div class="q-pa-sm">
+      <q-page padding class="page">
         <router-view v-slot="{ Component }">
           <keep-alive>
             <component :is="Component" />
           </keep-alive>
         </router-view>
-      </div>
+      </q-page>
     </q-page-container>
 
     <q-footer class="bg-grey-8 text-white">
@@ -71,6 +71,12 @@ function toggleLeftDrawer() {
 </template>
 
 <style scoped>
+.page {
+  max-width: 1024px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .footer {
   font-size: 0.5em;
 }

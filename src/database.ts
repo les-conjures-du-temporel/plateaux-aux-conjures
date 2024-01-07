@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore'
 import type { Ref } from 'vue'
 import { ref } from 'vue'
-import { notifyError } from '@/helpers'
+import { notifyError, notifyWarn } from '@/helpers'
 
 /**
  * Represents a board game, that may or may not be in the club's catalog
@@ -47,23 +47,33 @@ export class Database {
 
   constructor(firebaseApp: FirebaseApp, autoUpdateMs: number = 90e3) {
     this.firestore = getFirestore(firebaseApp)
-    this.reloadGames()
+    this.reloadGames(false)
     this.reloadTranslations()
 
     setInterval(() => {
-      this.reloadGames()
+      this.reloadGames(true)
     }, autoUpdateMs)
   }
 
-  reloadGames() {
-    this.games.value = []
+  /**
+   * Load all game information from the database. A "soft" load is useful to update the data on the background, only
+   * replacing it if and when the new data is available
+   */
+  reloadGames(softLoad: boolean) {
+    if (!softLoad) {
+      this.games.value = []
+    }
 
     this.getGames()
       .then((loadedGames) => {
         this.games.value = loadedGames
       })
       .catch((error) => {
-        notifyError(error)
+        if (softLoad) {
+          notifyWarn(error)
+        } else {
+          notifyError(error)
+        }
       })
   }
 
