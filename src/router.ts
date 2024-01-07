@@ -4,6 +4,7 @@ import AboutView from '@/views/AboutView.vue'
 import LogPlayView from '@/views/RecordPlayView.vue'
 import SuggestView from '@/views/SuggestView.vue'
 import GamesView from '@/views/GamesView.vue'
+import TranslationsView from '@/views/TranslationsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -32,6 +33,11 @@ const router = createRouter({
       path: '/a-propos',
       name: 'about',
       component: AboutView
+    },
+    {
+      path: '/traductions',
+      name: 'translations',
+      component: TranslationsView
     }
   ]
 })

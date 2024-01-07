@@ -21,6 +21,9 @@ function resync() {
     .then(() => {
       resyncLog.value?.push({ message: 'Done', icon: 'done' })
     })
+    .catch((error) => {
+      resyncLog.value?.push({ message: `Failed with ${error}`, icon: 'error' })
+    })
     .finally(() => {
       resyncing.value = false
     })
@@ -86,7 +89,14 @@ function resync() {
     Les catégories et mécaniques de chaque jeu sont écrites en anglais sur le site de Board Game
     Geek. Pour changer la traduction c'est par ici :
   </p>
-  <q-btn label="Modifier les traductions" no-caps color="primary" unelevated :disable="!passCode" />
+  <q-btn
+    label="Modifier les traductions"
+    no-caps
+    color="primary"
+    unelevated
+    :disable="!passCode"
+    :to="{ name: 'translations' }"
+  />
 
   <p class="q-my-sm">
     Pour extraire toutes les informations présentes sur l'application c'est par ici. Ceci est utile
