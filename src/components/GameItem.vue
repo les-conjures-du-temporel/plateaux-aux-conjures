@@ -50,9 +50,9 @@ const weight = computed(() => {
   if (!averageWeight) {
     return
   } else if (averageWeight < 2) {
-    return 'jeu léger'
+    return 'jeu facile'
   } else if (averageWeight > 3) {
-    return 'jeu dense'
+    return 'jeu difficile'
   } else {
     return 'jeu intermédiaire'
   }

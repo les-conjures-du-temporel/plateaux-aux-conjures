@@ -20,6 +20,8 @@ function resync() {
     resyncLog.value?.push({ message, icon })
   })
     .then(() => {
+      db.reloadGames(false)
+      db.reloadTranslations()
       resyncLog.value?.push({ message: 'Done', icon: 'done' })
     })
     .catch((error) => {
@@ -82,10 +84,10 @@ function toCSV(rows: string[][]): string {
 
 <template>
   <p>
-    Ce site a été créé par les conjurés du temporel. Nous somme une association de jeux de plateaux
+    Ce site a été créé par les conjurés du temporel. Nous sommes une association de jeux de plateaux
     et jeux de rôle à Angers, France. Visite notre site
     <a href="https://lesconjuresdutemporel.fr" target="_blank">lesconjuresdutemporel.fr</a> pour en
-    savoir plus. Et si tu habites dans le coins, viens nous voir !
+    savoir plus. Et si tu habites dans le coin, viens nous voir !
   </p>
 
   <p>

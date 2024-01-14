@@ -126,7 +126,7 @@ async function doSave() {
 <template>
   <p>
     Tu as joué avec nous ? Enregistre ta partie sur cette page pour que nous le sachions.<br />
-    Ça nous aide à mieux connaître les jeux tendance :)
+    Ça nous aide à mieux connaître les jeux tendances :)
   </p>
 
   <div class="text-h6 q-my-sm">
@@ -212,8 +212,8 @@ async function doSave() {
     <code>{{ passCode }}</code>
   </div>
   <div class="text-caption">
-    Ce code est affiché dans nos locaux et on l'utilise pour nous assurer que seulement nos membres
-    peuvent enregistrer ses parties
+    Ce code est affiché dans nos locaux et on l'utilise pour s'assurer que seuls nos membres peuvent
+    enregistrer leurs parties
   </div>
 
   <q-btn

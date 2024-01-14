@@ -32,9 +32,9 @@ for (let i = 4; i <= 16; i += 2) {
 }
 criteriaAgeOptions.push({ label: 'Peu importe', value: null })
 const criteriaWeightOptions: Option[] = [
-  { label: 'léger', value: [0, 2] },
+  { label: 'facile', value: [0, 2] },
   { label: 'intermédiaire', value: [2, 3] },
-  { label: 'dense', value: [3, 5] }
+  { label: 'difficile', value: [3, 5] }
 ]
 
 const criteriaPlayers: Ref<Interval[]> = ref([])
@@ -158,8 +158,8 @@ function addFavoriteGame(game: Game): void {
 
 <template>
   <p>
-    Envie de lancer une partie, mais tu ne sais pas trop quel jeu prendre ?<br />
-    Laisse-moi t'aider à trouver ton bonheur dans notre bibliothèque
+    Envie de lancer une partie, mais tu ne sais pas trop quel jeu choisir ?<br />
+    Laisse-moi t'aider à trouver ton bonheur dans notre bibliothèque !
   </p>
 
   <q-card>
@@ -256,7 +256,8 @@ function addFavoriteGame(game: Game): void {
         <p>
           Quels sont vos jeux favoris ?<br />
           <span class="text-caption"
-            >Peut-être on aura un jeu avec une mécanique, théme ou créateurs similaires</span
+            >La recherche privilégiera les jeux avec une mécanique, théme ou créateurs
+            similaires</span
           >
         </p>
 
@@ -290,9 +291,9 @@ function addFavoriteGame(game: Game): void {
 
     <div v-else>
       <p v-if="suggestionResults.length > MAX_SUGGESTIONS">
-        Voici les {{ MAX_SUGGESTIONS }} meilleures suggéstions
+        Voici les {{ MAX_SUGGESTIONS }} meilleures suggestions
       </p>
-      <p v-else>Voici {{ pluralS(suggestionResults.length, 'suggéstion') }}</p>
+      <p v-else>Voici {{ pluralS(suggestionResults.length, 'suggestion') }}</p>
 
       <template
         v-for="(suggestion, index) in suggestionResults.slice(0, MAX_SUGGESTIONS)"
