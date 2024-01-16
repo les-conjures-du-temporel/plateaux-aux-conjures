@@ -3,11 +3,16 @@ import type { Game } from '@/database'
 /**
  * Score games based on the recommendation for the number of players from BGG community
  *
- * Return 1 for a game that has it as the "best" configuration, 0.5 for "recommended" and 0 otherwise
+ * Return 1 for a game that has it as the "best" configuration, 0.5 for "recommended" and -0.5 for "not recommended" and
+ * 0 if unknown.
  */
 export class PlayersScorer {
   // The minimum number of votes on a give question in order to consider its answers
   private static readonly minimumVotes: number = 10
+  private static readonly scoreBest: number = 1
+  private static readonly scoreRecommended: number = 0.5
+  private static readonly scoreNotRecommended: number = -0.5
+  private static readonly scoreOther: number = 0
   // The maximum number of players to consider when summarizing poll results.
   // For example, when `10`, polls that end with a question like "more than 6" will have this answer applied to values
   // from 7 through 10. Additionally, polls that have questions like "10", "11" and "more than 11" will have these 3
@@ -39,11 +44,13 @@ export class PlayersScorer {
 
       let score
       if (bestVotes >= recommendedVotes && bestVotes >= notRecommendedVotes) {
-        score = 1
+        score = PlayersScorer.scoreBest
       } else if (recommendedVotes >= bestVotes && recommendedVotes >= notRecommendedVotes) {
-        score = 0.5
+        score = PlayersScorer.scoreRecommended
+      } else if (notRecommendedVotes >= bestVotes && notRecommendedVotes >= recommendedVotes) {
+        score = PlayersScorer.scoreNotRecommended
       } else {
-        score = 0
+        score = PlayersScorer.scoreOther
       }
 
       if (!poll.isMoreThan) {
@@ -77,20 +84,29 @@ export class PlayersScorer {
     return scoreByPlayers
   }
 
-  score(games: Game[], playersSet: Set<number>): Map<string, number> {
+  score(
+    games: Game[],
+    playersSet: Set<number>
+  ): { scored: Map<string, number>; relevant: Set<string> } {
     const scoredGames = new Map()
+    const relevantGames: Set<string> = new Set()
 
     for (const game of games) {
-      const scoreByPlayers = this.scoreByGameAndPlayers.get(game.bgg.id)
+      const gameId = game.bgg.id
+      const scoreByPlayers = this.scoreByGameAndPlayers.get(gameId)
       if (scoreByPlayers) {
         let rawScore = 0
         for (const players of playersSet) {
-          rawScore += scoreByPlayers.get(players) || 0
+          const playerRawScore = scoreByPlayers.get(players) || 0
+          if (playerRawScore === PlayersScorer.scoreBest) {
+            relevantGames.add(gameId)
+          }
+          rawScore += playerRawScore
         }
-        scoredGames.set(game.bgg.id, rawScore / playersSet.size)
+        scoredGames.set(gameId, rawScore / playersSet.size)
       }
     }
 
-    return scoredGames
+    return { scored: scoredGames, relevant: relevantGames }
   }
 }

@@ -84,10 +84,10 @@ export class GameScorer {
       const gameId = game.bgg.id
       const bggRatingScore = bggRatingScoreByGame.get(gameId) || 0
       const favoriteMatchScore = favoriteMatchScoreByGame.get(gameId) || 0
-      const playTimeScore = playTimeScoreByGame.get(gameId) || 0
-      const playersScore = playersScoreByGame.get(gameId) || 0
-      const randomDailyScore = randomDailyScoreByGame.get(gameId) || 0
-      const recentlyPlayedScore = recentlyPlayedScoreByGame.get(gameId) || 0
+      const playTimeScore = playTimeScoreByGame.scored.get(gameId) || 0
+      const playersScore = playersScoreByGame.scored.get(gameId) || 0
+      const randomDailyScore = randomDailyScoreByGame.scored.get(gameId) || 0
+      const recentlyPlayedScore = recentlyPlayedScoreByGame.scored.get(gameId) || 0
 
       if (favoriteGames.length > 0 && favoriteMatchScore === 0) {
         // Ignore games that have nothing in common
@@ -102,6 +102,20 @@ export class GameScorer {
         randomDailyScore * this.randomDailyBoost +
         recentlyPlayedScore * this.recentlyPlayedBoost
 
+      const relevantScores: ScoreKind[] = []
+      if (playTimeScoreByGame.relevant.has(gameId)) {
+        relevantScores.push('playTime')
+      }
+      if (playersScoreByGame.relevant.has(gameId)) {
+        relevantScores.push('players')
+      }
+      if (randomDailyScoreByGame.relevant.has(gameId)) {
+        relevantScores.push('randomDaily')
+      }
+      if (recentlyPlayedScoreByGame.relevant.has(gameId)) {
+        relevantScores.push('recentlyPlayed')
+      }
+
       scoredGames.push({
         game,
         bggRatingScore,
@@ -111,19 +125,15 @@ export class GameScorer {
         randomDailyScore,
         recentlyPlayedScore,
         score,
-        relevantScores: []
+        relevantScores
       })
     }
 
     scoredGames.sort((a, b) => b.score - a.score)
 
-    // Detect which components were the most relevant
+    // Detect components that were relevant relative to others
     this.detectRelevant(scoredGames, 'bggRating', (game) => game.bggRatingScore)
     this.detectRelevant(scoredGames, 'favoriteMatch', (game) => game.favoriteMatchScore)
-    this.detectRelevant(scoredGames, 'playTime', (game) => game.playTimeScore)
-    this.detectRelevant(scoredGames, 'players', (game) => game.playersScore)
-    this.detectRelevant(scoredGames, 'randomDaily', (game) => game.randomDailyScore)
-    this.detectRelevant(scoredGames, 'recentlyPlayed', (game) => game.recentlyPlayedScore)
 
     console.timeEnd('GameScorer.score')
     return scoredGames

@@ -36,14 +36,18 @@ export class RandomDailyScorer {
     return hash >>> 0
   }
 
-  score(games: Game[]): Map<string, number> {
-    const scoredGames = new Map()
+  score(games: Game[]): { scored: Map<string, number>; relevant: Set<string> } {
+    const scored = new Map()
+    const relevant: Set<string> = new Set()
 
     for (const game of games) {
       const id = game.bgg.id
-      scoredGames.set(id, this.selectedGameIds.has(id) ? 1 : 0)
+      if (this.selectedGameIds.has(id)) {
+        scored.set(id, 1)
+        relevant.add(id)
+      }
     }
 
-    return scoredGames
+    return { scored, relevant }
   }
 }

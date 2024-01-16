@@ -7,23 +7,26 @@ export class RecentlyPlayedScorer {
   private readonly playedLastMonthScore: number = 1
   private readonly playedLastSixMonthsScore: number = 0.5
 
-  score(games: Game[]): Map<string, number> {
+  score(games: Game[]): { scored: Map<string, number>; relevant: Set<string> } {
     const now = Date.now()
-    const scoredGames = new Map()
+    const scored = new Map()
+    const relevant: Set<string> = new Set()
     for (const game of games) {
       const lastPlayed = parseDate(game.lastPlayed)
       if (lastPlayed) {
         const time = now - lastPlayed.getTime()
         const months = time / 3600e3 / 24 / 30
 
+        const gameId = game.bgg.id
         if (months <= 1) {
-          scoredGames.set(game.bgg.id, this.playedLastMonthScore)
+          scored.set(gameId, this.playedLastMonthScore)
+          relevant.add(gameId)
         } else if (months <= 6) {
-          scoredGames.set(game.bgg.id, this.playedLastSixMonthsScore)
+          scored.set(gameId, this.playedLastSixMonthsScore)
         }
       }
     }
-    return scoredGames
+    return { scored, relevant }
   }
 }
 

@@ -24,28 +24,43 @@ export class PlayTimeScorer {
   // The score when the value is not known
   private readonly unknownScore = 0.5
 
-  score(games: Game[], playersSet: Set<number>, playTimeCriteria: Interval[]): Map<string, number> {
-    const scoredGames = new Map()
+  score(
+    games: Game[],
+    playersSet: Set<number>,
+    playTimeCriteria: Interval[]
+  ): { scored: Map<string, number>; relevant: Set<string> } {
+    const scored = new Map()
+    const relevant: Set<string> = new Set()
 
     for (const game of games) {
-      scoredGames.set(game.bgg.id, this.scoreGame(game, playersSet, playTimeCriteria))
+      const gameId = game.bgg.id
+      const [score, isRelevant] = this.scoreGame(game, playersSet, playTimeCriteria)
+      scored.set(gameId, score)
+      if (isRelevant) {
+        relevant.add(gameId)
+      }
     }
 
-    return scoredGames
+    return { scored, relevant }
   }
 
   /**
-   * Return 1 if the play time is likely to be respected for the given number of players, 0 if not and `null` if
+   * Return 1 if the play time is likely to be respected for the given number of players, 0 if not and 0.5 if
    * unknown.
    */
-  private scoreGame(game: Game, playersSet: Set<number>, playTimeCriteria: Interval[]): number {
+  private scoreGame(
+    game: Game,
+    playersSet: Set<number>,
+    playTimeCriteria: Interval[]
+  ): [number, boolean] {
     const { minPlayers, maxPlayers, minPlayTimeMinutes, maxPlayTimeMinutes } = game.bgg
     if (!minPlayers || !maxPlayers || !minPlayTimeMinutes || !maxPlayTimeMinutes) {
-      return this.unknownScore
+      return [this.unknownScore, false]
     }
 
     let rawScore = 0
     let counts = 0
+    let isRelevant = false
     for (const players of playersSet) {
       if (players < minPlayers || players > maxPlayers) {
         continue
@@ -57,12 +72,13 @@ export class PlayTimeScorer {
       for (const [minBound, maxBound] of playTimeCriteria) {
         if (estimatedPlayTime >= minBound && estimatedPlayTime <= maxBound) {
           rawScore += 1
+          isRelevant = true
         }
       }
 
       counts += playTimeCriteria.length
     }
 
-    return counts === 0 ? this.unknownScore : rawScore / counts
+    return [counts === 0 ? this.unknownScore : rawScore / counts, isRelevant]
   }
 }
