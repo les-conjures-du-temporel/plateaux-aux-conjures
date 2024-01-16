@@ -19,13 +19,37 @@ for (let i = 1; i <= 9; i++) {
   criteriaPlayersOptions.push({ label: String(i), value: [i, i] })
 }
 criteriaPlayersOptions.push({ label: '10+', value: [10, Number.POSITIVE_INFINITY] })
-const criteriaPlayTimeOptions: Option[] = [
-  { label: 'moins de 15 minutes', value: [0, 15] },
-  { label: 'entre 15 et 30 minutes', value: [15, 30] },
-  { label: 'entre 30 et 60 minutes', value: [30, 60] },
-  { label: 'entre 60 et 120 minutes', value: [60, 120] },
-  { label: 'plus de 120 minutes', value: [120, Number.POSITIVE_INFINITY] }
-]
+const MIN_PLAY_TIME_RANGE = 15
+const MAX_PLAY_TIME_RANGE = 135
+const criteriaPlayTimeRange: Ref<{ min: number; max: number }> = ref({
+  min: MIN_PLAY_TIME_RANGE,
+  max: MAX_PLAY_TIME_RANGE
+})
+function getPlayTimeLabel(value: number): string {
+  if (value === MAX_PLAY_TIME_RANGE) {
+    return 'Plus de 2h'
+  }
+
+  const hours = Math.floor(value / 60)
+  const minutes = value % 60
+  if (hours > 0 && minutes > 0) {
+    return `${hours} h ${minutes} min`
+  } else if (minutes > 0) {
+    return `${minutes} min`
+  } else {
+    return `${hours} h`
+  }
+}
+const criteriaPlayTime: ComputedRef<Interval | null> = computed(() => {
+  const { min, max } = criteriaPlayTimeRange.value
+  if (min === MIN_PLAY_TIME_RANGE && max === MAX_PLAY_TIME_RANGE) {
+    return null
+  }
+
+  const actualMin = min === 15 ? 0 : min
+  const actualMax = max === 135 ? Number.POSITIVE_INFINITY : max
+  return [actualMin, actualMax]
+})
 const criteriaAgeOptions: MaybeOption[] = []
 for (let i = 4; i <= 16; i += 2) {
   criteriaAgeOptions.push({ label: `${i} +`, value: [0, i] })
@@ -38,7 +62,6 @@ const criteriaWeightOptions: Option[] = [
 ]
 
 const criteriaPlayers: Ref<Interval[]> = ref([])
-const criteriaPlayTime: Ref<Interval[]> = ref([])
 const criteriaAge: Ref<Interval | null> = ref(null)
 const criteriaWeight: Ref<Interval[]> = ref([])
 const criteriaFavoriteGames: Ref<Game[]> = ref([])
@@ -73,7 +96,7 @@ const MAX_SUGGESTIONS = 25
 const suggestionResults = computed(() => {
   if (
     !criteriaPlayers.value.length &&
-    !criteriaPlayTime.value.length &&
+    !criteriaPlayTime.value &&
     !criteriaAge.value &&
     !criteriaWeight.value.length &&
     !criteriaFavoriteGames.value.length
@@ -94,9 +117,10 @@ const suggestionResults = computed(() => {
     }
 
     if (
+      criteriaPlayTime.value &&
       !checkCriteria(
         [game.bgg.minPlayTimeMinutes, game.bgg.maxPlayTimeMinutes],
-        criteriaPlayTime.value
+        [criteriaPlayTime.value]
       )
     ) {
       continue
@@ -185,14 +209,7 @@ function addFavoriteGame(game: Game): void {
         label="Temps"
         icon="schedule"
         no-caps
-        :alert="criteriaPlayTime.length ? 'accent' : false"
-      />
-      <q-tab
-        name="age"
-        label="Age"
-        icon="family_restroom"
-        no-caps
-        :alert="criteriaAge ? 'accent' : false"
+        :alert="criteriaPlayTime ? 'accent' : false"
       />
       <q-tab
         name="weight"
@@ -207,6 +224,13 @@ function addFavoriteGame(game: Game): void {
         icon="thumb_up"
         no-caps
         :alert="criteriaFavoriteGames.length ? 'accent' : false"
+      />
+      <q-tab
+        name="age"
+        label="Age"
+        icon="family_restroom"
+        no-caps
+        :alert="criteriaAge ? 'accent' : false"
       />
     </q-tabs>
 
@@ -227,11 +251,22 @@ function addFavoriteGame(game: Game): void {
 
       <q-tab-panel name="playTime">
         <p>Vous avez combien de temps ?</p>
-        <q-option-group
-          v-model="criteriaPlayTime"
-          :options="criteriaPlayTimeOptions"
-          type="checkbox"
-        />
+
+        <div class="time-range">
+          <q-range
+            v-model="criteriaPlayTimeRange"
+            :min="15"
+            :max="135"
+            :step="15"
+            label
+            snap
+            markers
+            label-always
+            :marker-labels="{ 30: '30min', 60: '1h', 120: '2h' }"
+            :left-label-value="getPlayTimeLabel(criteriaPlayTimeRange.min)"
+            :right-label-value="getPlayTimeLabel(criteriaPlayTimeRange.max)"
+          />
+        </div>
       </q-tab-panel>
 
       <q-tab-panel name="age">
@@ -310,4 +345,10 @@ function addFavoriteGame(game: Game): void {
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.time-range {
+  margin-top: 40px;
+  margin-left: 20px;
+  margin-right: 20px;
+}
+</style>

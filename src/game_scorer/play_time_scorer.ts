@@ -27,17 +27,19 @@ export class PlayTimeScorer {
   score(
     games: Game[],
     playersSet: Set<number>,
-    playTimeCriteria: Interval[]
+    playTimeCriteria: Interval | null
   ): { scored: Map<string, number>; relevant: Set<string> } {
     const scored = new Map()
     const relevant: Set<string> = new Set()
 
-    for (const game of games) {
-      const gameId = game.bgg.id
-      const [score, isRelevant] = this.scoreGame(game, playersSet, playTimeCriteria)
-      scored.set(gameId, score)
-      if (isRelevant) {
-        relevant.add(gameId)
+    if (playTimeCriteria) {
+      for (const game of games) {
+        const gameId = game.bgg.id
+        const [score, isRelevant] = this.scoreGame(game, playersSet, playTimeCriteria)
+        scored.set(gameId, score)
+        if (isRelevant) {
+          relevant.add(gameId)
+        }
       }
     }
 
@@ -51,7 +53,7 @@ export class PlayTimeScorer {
   private scoreGame(
     game: Game,
     playersSet: Set<number>,
-    playTimeCriteria: Interval[]
+    playTimeCriteria: Interval
   ): [number, boolean] {
     const { minPlayers, maxPlayers, minPlayTimeMinutes, maxPlayTimeMinutes } = game.bgg
     if (!minPlayers || !maxPlayers || !minPlayTimeMinutes || !maxPlayTimeMinutes) {
@@ -69,11 +71,10 @@ export class PlayTimeScorer {
       const ratio = (players - minPlayers) / (maxPlayers - minPlayers)
       const estimatedPlayTime =
         minPlayTimeMinutes + (maxPlayTimeMinutes - minPlayTimeMinutes) * ratio
-      for (const [minBound, maxBound] of playTimeCriteria) {
-        if (estimatedPlayTime >= minBound && estimatedPlayTime <= maxBound) {
-          rawScore += 1
-          isRelevant = true
-        }
+      const [minBound, maxBound] = playTimeCriteria
+      if (estimatedPlayTime >= minBound && estimatedPlayTime <= maxBound) {
+        rawScore += 1
+        isRelevant = true
       }
 
       counts += playTimeCriteria.length

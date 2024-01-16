@@ -69,7 +69,7 @@ export class GameScorer {
     games: Game[],
     favoriteGames: Game[],
     playersSet: Set<number>,
-    playTimeCriteria: Interval[]
+    playTimeCriteria: Interval | null
   ): ScoredGame[] {
     console.time('GameScorer.score')
     const bggRatingScoreByGame = this.bggRatingScorer.score(games)
