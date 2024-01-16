@@ -1,5 +1,3 @@
 - configure emulators to run locally
 - document how to develop this codebase
-- transfer to the organisation
-- Show more résultat in suggestions
 - Maybe boost newer releases (<3 years)?

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, type ComputedRef, inject, type Ref, ref } from 'vue'
+import { computed, type ComputedRef, inject, type Ref, ref, watch } from 'vue'
 import SearchGame from '@/components/SearchGame.vue'
 import { Database, type Game } from '@/database'
 import GameItem, { type Highlights } from '@/components/GameItem.vue'
@@ -91,7 +91,8 @@ const highlights: ComputedRef<Highlights> = computed(() => {
   }
 })
 
-const MAX_SUGGESTIONS = 25
+const PAGE_SIZE = 25
+const pagesToShow: Ref<number> = ref(1)
 
 const suggestionResults = computed(() => {
   if (
@@ -149,6 +150,11 @@ const suggestionResults = computed(() => {
     playersSet,
     criteriaPlayTime.value
   )
+})
+
+// Reset to first page when results change
+watch(suggestionResults, () => {
+  pagesToShow.value = 1
 })
 
 /**
@@ -269,13 +275,6 @@ function addFavoriteGame(game: Game): void {
         </div>
       </q-tab-panel>
 
-      <q-tab-panel name="age">
-        <p>A partir de quel âge ?</p>
-        <div class="q-gutter-sm">
-          <q-option-group v-model="criteriaAge" :options="criteriaAgeOptions" inline />
-        </div>
-      </q-tab-panel>
-
       <q-tab-panel name="weight">
         <p>Quel niveau de complexité ?</p>
         <div class="q-gutter-sm">
@@ -312,10 +311,17 @@ function addFavoriteGame(game: Game): void {
 
         <search-game @input="addFavoriteGame" />
       </q-tab-panel>
+
+      <q-tab-panel name="age">
+        <p>A partir de quel âge ?</p>
+        <div class="q-gutter-sm">
+          <q-option-group v-model="criteriaAge" :options="criteriaAgeOptions" inline />
+        </div>
+      </q-tab-panel>
     </q-tab-panels>
   </q-card>
 
-  <div class="text-center" v-if="games.length === 0">
+  <div class="text-center q-my-sm" v-if="games.length === 0">
     <q-spinner color="primary" size="5em" />
   </div>
 
@@ -325,13 +331,13 @@ function addFavoriteGame(game: Game): void {
     </q-banner>
 
     <div v-else>
-      <p v-if="suggestionResults.length > MAX_SUGGESTIONS">
-        Voici les {{ MAX_SUGGESTIONS }} meilleures suggestions
+      <p v-if="suggestionResults.length > PAGE_SIZE * pagesToShow">
+        Voici les {{ PAGE_SIZE * pagesToShow }} meilleures suggestions
       </p>
       <p v-else>Voici {{ pluralS(suggestionResults.length, 'suggestion') }}</p>
 
       <template
-        v-for="(suggestion, index) in suggestionResults.slice(0, MAX_SUGGESTIONS)"
+        v-for="(suggestion, index) in suggestionResults.slice(0, PAGE_SIZE * pagesToShow)"
         :key="suggestion.game.bgg.id"
       >
         <q-separator v-if="index > 0" color="secondary" />
@@ -341,6 +347,16 @@ function addFavoriteGame(game: Game): void {
           :relevant-scores="suggestion.relevantScores"
         />
       </template>
+
+      <div v-if="suggestionResults.length > PAGE_SIZE * pagesToShow" class="text-center">
+        <q-btn
+          label="Montrer d'avantage"
+          unelevated
+          no-caps
+          color="secondary"
+          @click="pagesToShow += 1"
+        />
+      </div>
     </div>
   </div>
 </template>
