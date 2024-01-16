@@ -18,6 +18,7 @@ const props = defineProps<{
   highlights?: Highlights
   relevantScores?: ScoreKind[]
   showTotalPlays?: boolean
+  showOwnedByClub?: boolean
 }>()
 
 const showDetails = ref(false)
@@ -131,6 +132,11 @@ function onClickHeader() {
               :name="getIconForScoreKind(scoreKind)"
               class="q-mx-xs"
               size="1.25em"
+            />
+            <q-badge
+              color="primary"
+              label="jeu du club"
+              v-if="showOwnedByClub && game.ownedByClub"
             />
           </div>
           <div class="col-6" v-if="!simple">

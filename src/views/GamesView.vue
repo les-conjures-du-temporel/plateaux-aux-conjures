@@ -25,7 +25,7 @@ const recentGames = computed(() => {
 
   <template v-for="(game, index) in recentGames" :key="game.bgg.id">
     <q-separator v-if="index > 0" color="secondary" />
-    <game-item :game="game" show-total-plays />
+    <game-item :game="game" show-total-plays show-owned-by-club />
   </template>
 </template>
 

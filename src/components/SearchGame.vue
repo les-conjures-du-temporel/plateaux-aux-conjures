@@ -44,7 +44,7 @@ function filterGameSearch(term: string, doneFn: (callbackFn: () => void) => void
           label: result.name,
           caption: result.yearPublished ? `(${result.yearPublished})` : undefined,
           value: result.id,
-          badge: result.ownedByClub ? 'au club' : undefined,
+          badge: result.ownedByClub ? 'jeu du club' : undefined,
           showSpinner: false
         })
       }
