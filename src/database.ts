@@ -28,12 +28,16 @@ export interface Game {
   // In YYYY-MM-DD format
   lastPlayed: string | null
   totalPlays: number
+  // Our own judgement of the difficulty / heaviness of this game
+  clubWeight: ClubWeight | null
 }
 
 export interface Translations {
   categories: Map<string, string>
   mechanics: Map<string, string>
 }
+
+export type ClubWeight = 'green' | 'blue' | 'yellow' | 'red'
 
 export type PlayLocation = 'club' | 'home' | 'festival' | 'other'
 

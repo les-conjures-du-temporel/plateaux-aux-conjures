@@ -5,6 +5,7 @@ import LogPlayView from '@/views/RecordPlayView.vue'
 import SuggestView from '@/views/SuggestView.vue'
 import GamesView from '@/views/GamesView.vue'
 import TranslationsView from '@/views/TranslationsView.vue'
+import ClubWeightView from '@/views/ClubWeightView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,6 +39,11 @@ const router = createRouter({
       path: '/traductions',
       name: 'translations',
       component: TranslationsView
+    },
+    {
+      path: '/pastilles',
+      name: 'club-weights',
+      component: ClubWeightView
     }
   ]
 })
