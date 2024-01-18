@@ -325,7 +325,7 @@ function addFavoriteGame(game: Game): void {
     <q-spinner color="primary" size="5em" />
   </div>
 
-  <div class="q-ma-md" v-if="suggestionResults">
+  <div class="q-ma-md" v-if="games.length && suggestionResults">
     <q-banner class="bg-secondary text-white" v-if="!suggestionResults.length">
       Aucun résultat n'a été trouvé. Essaye de changer les critères de la recherche
     </q-banner>
