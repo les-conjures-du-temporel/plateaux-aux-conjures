@@ -24,8 +24,9 @@ export interface Game {
   name: string
   bgg: BggGame
   ownedByClub: boolean
-  // In YYYY-MM-DD format
-  lastPlayed: string | null
+  // When this game was first detected in the club's collection.
+  ownedSince: Day | null
+  lastPlayed: Day | null
   totalPlays: number
 }
 

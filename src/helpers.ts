@@ -39,10 +39,11 @@ export function normalizeBase32Code(text: string): string {
 
 export function buildGameFromBggGame(bggGame: BggGame, ownedByClub: boolean, name?: string): Game {
   return {
+    name: name || bggGame.primaryName,
     bgg: bggGame,
     ownedByClub,
+    ownedSince: ownedByClub ? today() : null,
     lastPlayed: null,
-    name: name || bggGame.primaryName,
     totalPlays: 0
   }
 }
