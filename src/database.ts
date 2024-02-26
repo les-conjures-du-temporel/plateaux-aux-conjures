@@ -16,6 +16,11 @@ import { notifyError, notifyWarn } from '@/helpers'
 import type { Day } from '@/day'
 
 /**
+ * The age (in days) that defines a "new" game in the club
+ */
+export const RECENT_GAMES_DAYS = 30
+
+/**
  * Represents a board game, that may or may not be in the club's catalog
  */
 export interface Game {

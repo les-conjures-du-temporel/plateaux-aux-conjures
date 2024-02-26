@@ -47,7 +47,7 @@ export class GameScorer {
   private readonly playTimeBoost: number = 0.5
   private readonly playersBoost: number = 0.5
   private readonly randomDailyBoost: number = 0.25
-  private readonly recentlyPlayedBoost: number = 0.25
+  private readonly recentlyPlayedBoost: number = 0.75
 
   // Mark this amount of the top percentage in each score
   private readonly relevancyPercentile: number = 20

@@ -20,7 +20,6 @@ export function formatNumber(n: number): string {
   return numberFormatter.format(n)
 }
 
-
 export async function sleep(time: number): Promise<void> {
   return new Promise<void>((resolve) => setTimeout(resolve, time))
 }

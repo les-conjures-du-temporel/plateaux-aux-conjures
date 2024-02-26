@@ -7,16 +7,38 @@ const MAX_GAMES = 50
 const games: Ref<Game[]> = inject<Database>('db')!.games
 
 const recentGames = computed(() => {
-  const playedGames = games.value.filter((game) => game.lastPlayed)
-  playedGames.sort((a, b) => b.lastPlayed!.localeCompare(a.lastPlayed!))
-  return playedGames.slice(0, MAX_GAMES)
+  return games.value
+    .map((game) => {
+      let key
+      if (game.ownedSince === null) {
+        key = game.lastPlayed
+      } else if (game.lastPlayed === null) {
+        key = game.ownedSince
+      } else if (game.ownedSince > game.lastPlayed) {
+        key = game.ownedSince
+      } else {
+        key = game.lastPlayed
+      }
+
+      return { game, key }
+    })
+    .filter((each) => each.key)
+    .sort((a, b) => {
+      return compare(b.key, a.key) || compare(a.game.name, b.game.name)
+    })
+    .slice(0, MAX_GAMES)
+    .map((each) => each.game)
 })
+
+function compare<T>(a: T, b: T): number {
+  return a < b ? -1 : a > b ? 1 : 0
+}
 </script>
 
 <template>
   <p>
-    Sur cette page tu trouves une liste des jeux récemment joués chez nous et d'autres jeux dans
-    notre collection.
+    Sur cette page tu trouves la liste des jeux récemment joués et les derniers arrivés dans notre
+    collection.
   </p>
 
   <div class="text-center" v-if="games.length === 0">

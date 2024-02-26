@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { Database, type Game, type Translations } from '@/database'
+import { Database, type Game, RECENT_GAMES_DAYS, type Translations } from '@/database'
 import { computed, inject, type Ref, ref } from 'vue'
 import { formatNumber, pluralS } from '@/helpers'
 import GameItemTerms from '@/components/GameItemTerms.vue'
 import type { ScoreKind } from '@/game_scorer'
-import { dayToHumanString } from '../day'
+import { dayToHumanString, pastDay } from '@/day'
 
 export type Highlights = {
   categories: Set<string>
@@ -62,6 +62,15 @@ const weight = computed(() => {
 
 const sortedRelevantScores = computed(() => props.relevantScores?.slice()?.sort())
 
+const isNewClubGame = computed(() => {
+  const game = props.game
+  if (!game.ownedByClub || !game.ownedSince) {
+    return false
+  }
+
+  return game.ownedSince >= pastDay(RECENT_GAMES_DAYS)
+})
+
 function getIconForScoreKind(scoreKind: ScoreKind): string {
   return {
     players: 'groups',
@@ -109,8 +118,8 @@ function onClickHeader() {
         >
 
         <div v-if="showTotalPlays && game.lastPlayed" class="row">
-          <div class="col-6">joué le {{ dayToHumanString(game.lastPlayed) }}</div>
           <div class="col-6">{{ pluralS(game.totalPlays, 'partie') }}</div>
+          <div class="col-6">dernière le {{ dayToHumanString(game.lastPlayed) }}</div>
         </div>
 
         <div class="row">
@@ -139,6 +148,7 @@ function onClickHeader() {
               label="jeu du club"
               v-if="showOwnedByClub && game.ownedByClub"
             />
+            <q-badge color="primary" label="arrivé récemment" v-if="isNewClubGame" />
           </div>
           <div class="col-6" v-if="!simple">
             <q-btn
