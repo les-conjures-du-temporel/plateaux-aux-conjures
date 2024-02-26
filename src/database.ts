@@ -23,8 +23,6 @@ export interface Game {
   name: string
   bgg: BggGame
   ownedByClub: boolean
-  // The code used to log a play
-  clubCode: string | null
   // In YYYY-MM-DD format
   lastPlayed: string | null
   totalPlays: number

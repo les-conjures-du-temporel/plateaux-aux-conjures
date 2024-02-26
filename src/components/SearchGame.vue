@@ -110,7 +110,7 @@ function choseGame(game: Game): void {
 <template>
   <q-select
     v-model="selectedItem"
-    label="Saisir le nom ou le code conjuré"
+    label="Saisir le nom pour faire la recherche"
     hide-dropdown-icon
     use-input
     fill-input

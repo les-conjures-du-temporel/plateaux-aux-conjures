@@ -36,31 +36,6 @@ export async function sleep(time: number): Promise<void> {
 }
 
 /**
- * The club code is made of 4 base-32 chars.
- */
-export function generateClubCode(): string {
-  const base32Characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
-  let result = ''
-  for (let i = 0; i < 4; i++) {
-    const index = Math.floor(Math.random() * base32Characters.length)
-    result += base32Characters[index]
-  }
-  return result
-}
-
-/**
- * Accept small typos in the base-32 chars used in a club code
- */
-export function normalizeClubCode(text: string): string | null {
-  const normal = normalizeBase32Code(text)
-
-  if (normal.match(/^[A-Z234567]{4}$/)) {
-    return normal
-  }
-  return null
-}
-
-/**
  * Accept small typos in the base-32 chars
  */
 export function normalizeBase32Code(text: string): string {
@@ -76,7 +51,6 @@ export function buildGameFromBggGame(bggGame: BggGame, ownedByClub: boolean, nam
   return {
     bgg: bggGame,
     ownedByClub,
-    clubCode: ownedByClub ? generateClubCode() : null,
     lastPlayed: null,
     name: name || bggGame.primaryName,
     totalPlays: 0

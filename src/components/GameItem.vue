@@ -226,13 +226,6 @@ function onClickHeader() {
           <q-separator spaced inset size="2px" />
         </div>
 
-        <template v-if="game.clubCode">
-          <div>Code conjuré</div>
-          <div>
-            <code>{{ game.clubCode }}</code>
-          </div>
-        </template>
-
         <template v-if="game.lastPlayed">
           <div>Parties jouées</div>
           <div>{{ game.totalPlays }}</div>

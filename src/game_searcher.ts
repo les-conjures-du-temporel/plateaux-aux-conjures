@@ -1,7 +1,7 @@
 import type { Game } from '@/database'
 import type { BggSearchHit } from '@/board_game_geek'
 import { getGamesInBatches, searchGames } from '@/board_game_geek'
-import { buildGameFromBggGame, normalizeClubCode, notifyError, notifyWarn, sleep } from '@/helpers'
+import { buildGameFromBggGame, notifyError, notifyWarn, sleep } from '@/helpers'
 import type { ComputedRef, Ref } from 'vue'
 import { computed } from 'vue'
 
@@ -35,8 +35,6 @@ export class GameSearcher {
    * This will do a fast search on the local results, then after a time request more results from BGG.
    * If there are too many local results, the BGG api will not be called.
    *
-   * The search term can also be a club code.
-   *
    * Club-owned games will be higher on the result list.
    */
   searchForAutoComplete(
@@ -49,23 +47,6 @@ export class GameSearcher {
     const localGames = this.localGames.value
     const hitIds = new Set()
     const hits: SearchHit[] = []
-
-    const clubCode = normalizeClubCode(term)
-    if (clubCode) {
-      for (const localGame of localGames) {
-        if (localGame.game.clubCode === clubCode) {
-          const gameId = localGame.game.bgg.id
-          hits.push({
-            name: localGame.game.name,
-            yearPublished: localGame.game.bgg.yearPublished,
-            id: gameId,
-            ownedByClub: localGame.game.ownedByClub
-          })
-          hitIds.add(gameId)
-          break
-        }
-      }
-    }
 
     for (const localGame of localGames) {
       const gameId = localGame.game.bgg.id
