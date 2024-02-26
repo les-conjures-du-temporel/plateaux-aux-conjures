@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Database, type Game, type Translations } from '@/database'
 import { computed, inject, type Ref, ref } from 'vue'
-import { formatDate, formatNumber, pluralS } from '@/helpers'
+import { formatNumber, pluralS } from '@/helpers'
 import GameItemTerms from '@/components/GameItemTerms.vue'
 import type { ScoreKind } from '@/game_scorer'
+import { dayToHumanString } from '../day'
 
 export type Highlights = {
   categories: Set<string>
@@ -108,7 +109,7 @@ function onClickHeader() {
         >
 
         <div v-if="showTotalPlays && game.lastPlayed" class="row">
-          <div class="col-6">joué le {{ formatDate(game.lastPlayed) }}</div>
+          <div class="col-6">joué le {{ dayToHumanString(game.lastPlayed) }}</div>
           <div class="col-6">{{ pluralS(game.totalPlays, 'partie') }}</div>
         </div>
 
@@ -230,7 +231,7 @@ function onClickHeader() {
           <div>Parties jouées</div>
           <div>{{ game.totalPlays }}</div>
           <div>Dernière partie</div>
-          <div>{{ formatDate(game.lastPlayed) }}</div>
+          <div>{{ dayToHumanString(game.lastPlayed) }}</div>
         </template>
       </q-card-section>
     </transition>

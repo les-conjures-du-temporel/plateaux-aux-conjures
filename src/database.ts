@@ -13,6 +13,7 @@ import {
 import type { Ref } from 'vue'
 import { ref } from 'vue'
 import { notifyError, notifyWarn } from '@/helpers'
+import type { Day } from '@/day'
 
 /**
  * Represents a board game, that may or may not be in the club's catalog

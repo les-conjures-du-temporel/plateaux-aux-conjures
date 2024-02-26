@@ -1,6 +1,7 @@
 import type { BggGame } from '@/board_game_geek'
 import type { Game } from '@/database'
 import { Notify } from 'quasar'
+import { today } from '@/day'
 
 export function plural(n: number, singular: string, plural: string): string {
   return `${n} ${n === 1 ? singular : plural}`
@@ -19,17 +20,6 @@ export function formatNumber(n: number): string {
   return numberFormatter.format(n)
 }
 
-/**
- * Reformat date from `YYYY-MM-DD` into French style `DD/MM/YYYY`
- */
-export function formatDate(date: string): string {
-  const match = date.match(/^(\d\d\d\d)-(\d\d)-(\d\d)$/)
-  if (!match) {
-    return date
-  }
-  const [, year, month, day] = match
-  return `${day}/${month}/${year}`
-}
 
 export async function sleep(time: number): Promise<void> {
   return new Promise<void>((resolve) => setTimeout(resolve, time))

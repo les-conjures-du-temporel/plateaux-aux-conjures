@@ -1,4 +1,5 @@
 import type { Game } from '@/database'
+import { dayToJsDate } from '@/day'
 
 /**
  * Boost games that were played recently
@@ -12,7 +13,7 @@ export class RecentlyPlayedScorer {
     const scored = new Map()
     const relevant: Set<string> = new Set()
     for (const game of games) {
-      const lastPlayed = parseDate(game.lastPlayed)
+      const lastPlayed = game.lastPlayed ? dayToJsDate(game.lastPlayed) : null
       if (lastPlayed) {
         const time = now - lastPlayed.getTime()
         const months = time / 3600e3 / 24 / 30
@@ -30,19 +31,3 @@ export class RecentlyPlayedScorer {
   }
 }
 
-function parseDate(date: string | null): Date | null {
-  const match = date?.match(/^(\d\d\d\d)-(\d\d)-(\d\d)$/)
-  if (!match) {
-    return null
-  }
-  const [, yearStr, monthStr, dayStr] = match
-  try {
-    const year = Number.parseInt(yearStr)
-    const month = Number.parseInt(monthStr)
-    const day = Number.parseInt(dayStr)
-
-    return new Date(year, month - 1, day)
-  } catch (_) {
-    return null
-  }
-}
