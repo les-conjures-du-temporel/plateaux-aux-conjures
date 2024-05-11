@@ -2,13 +2,14 @@ import type { BggGame } from '@/board_game_geek'
 import { type FirebaseApp } from 'firebase/app'
 import {
   collection,
+  collectionGroup,
   doc,
   Firestore,
   getDoc,
   getDocs,
   getFirestore,
   setDoc,
-  collectionGroup
+  type DocumentData
 } from 'firebase/firestore'
 import type { Ref } from 'vue'
 import { ref } from 'vue'
@@ -72,12 +73,13 @@ export class Database {
    */
   reloadGames(softLoad: boolean) {
     if (!softLoad) {
-      this.games.value = []
+      this.games.value = (this.getCache('games') as Game[]) || []
     }
 
     this.getGames()
       .then((loadedGames) => {
         this.games.value = loadedGames
+        this.setCache('games', loadedGames)
       })
       .catch((error) => {
         if (softLoad) {
@@ -89,14 +91,13 @@ export class Database {
   }
 
   reloadTranslations() {
-    this.translations.value = {
-      categories: new Map(),
-      mechanics: new Map()
-    }
+    const cached = this.getCache('translations') || {}
+    this.translations.value = this.convertTranslations(cached)
 
-    this.getTranslations()
-      .then((loadedTranslations) => {
-        this.translations.value = loadedTranslations
+    this.getTranslationsData()
+      .then((data) => {
+        this.translations.value = this.convertTranslations(data)
+        this.setCache('translations', data)
       })
       .catch((error) => {
         notifyError(error)
@@ -111,10 +112,15 @@ export class Database {
     return gameQuerySnapshot.docs.map((doc) => doc.data() as Game)
   }
 
-  private async getTranslations(): Promise<Translations> {
+  /**
+   * Return all translations from the database
+   */
+  private async getTranslationsData(): Promise<DocumentData> {
     const translationsDoc = await getDoc(doc(this.firestore, 'translations', 'translations'))
-    const translationsData = translationsDoc.data() || {}
+    return translationsDoc.data() || {}
+  }
 
+  private convertTranslations(data: DocumentData): Translations {
     function extractMap(value: any): Map<string, string> {
       const map = new Map()
       if (value && typeof value === 'object') {
@@ -128,8 +134,8 @@ export class Database {
     }
 
     return {
-      categories: extractMap(translationsData?.categories),
-      mechanics: extractMap(translationsData?.mechanics)
+      categories: extractMap(data?.categories),
+      mechanics: extractMap(data?.mechanics)
     }
   }
 
@@ -149,5 +155,24 @@ export class Database {
       day: doc.data().day,
       location: doc.data().location
     }))
+  }
+
+  private setCache(key: string, value: object): void {
+    window.localStorage.setItem(key, JSON.stringify(value))
+  }
+
+  private getCache(key: string): object | null {
+    const item = window.localStorage.getItem(key)
+
+    if (item === null) {
+      return item
+    }
+
+    try {
+      return JSON.parse(item)
+    } catch (error) {
+      console.warn(`Could not parse ${key} from cache: ${error}`)
+      return null
+    }
   }
 }
