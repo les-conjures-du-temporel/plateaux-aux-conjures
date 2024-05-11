@@ -86,8 +86,8 @@ function toCSV(rows: string[][]): string {
   <p>
     Ce site a été créé par les conjurés du temporel. Nous sommes une association de jeux de plateaux
     et jeux de rôle à Angers, France. Visite notre site
-    <a href="https://lesconjuresdutemporel.fr" target="_blank">lesconjuresdutemporel.fr</a> pour en
-    savoir plus. Et si tu habites dans le coin, viens nous voir !
+    <a href="https://conjurestemporel.fr" target="_blank">conjurestemporel.fr</a> pour en savoir
+    plus. Et si tu habites dans le coin, viens nous voir !
   </p>
 
   <p>
