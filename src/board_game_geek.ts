@@ -4,9 +4,12 @@ import { sleep } from '@/helpers'
 const BASE_URL = 'https://www.boardgamegeek.com/xmlapi2'
 const REQUEST_TIMEOUT = 10e3
 const EXPORT_COLLECTION_QUEUE_TIMEOUT = 120e3
-const EXPORT_COLLECTION_QUEUE_SLEEP = 6e3
+const EXPORT_COLLECTION_QUEUE_SLEEP = 2e3
+const EXPORT_COLLECTION_QUEUE_TRIES = 3
 const GET_GAMES_BATCH_SIZE = 10
-const GET_GAMES_BATCH_SLEEP = 2e3
+const GET_GAMES_BATCH_SLEEP = 1e3
+const GET_GAMES_BATCH_TRIES = 3
+const RETRY_SLEEP = 5e3
 
 /**
  * Represents a board game retrieved from BoardGameGeek API.
@@ -58,7 +61,7 @@ export async function listGamesInUserCollection(
 
   let response = null
   while (Date.now() - start < EXPORT_COLLECTION_QUEUE_TIMEOUT) {
-    response = await fetchWithTimeout(apiUrl, REQUEST_TIMEOUT)
+    response = await fetchWithTimeout(apiUrl, REQUEST_TIMEOUT, EXPORT_COLLECTION_QUEUE_TRIES)
     if (response.status !== 202) {
       break
     }
@@ -180,19 +183,33 @@ export async function searchGames(term: string): Promise<BggSearchHit[]> {
   return searchHits
 }
 
-async function fetchWithTimeout(url: string, time: number): Promise<Response> {
-  const controller = new AbortController()
-  const signal = controller.signal
+async function fetchWithTimeout(url: string, time: number, tries: number = 1): Promise<Response> {
+  for (let i = 0; i < tries; i++) {
+    const controller = new AbortController()
+    const signal = controller.signal
 
-  const timeout = setTimeout(() => {
-    controller.abort()
-  }, time)
+    const timeout = setTimeout(() => {
+      controller.abort()
+    }, time)
 
-  const response = await fetch(url, { signal })
+    try {
+      const response = await fetch(url, { signal })
+      if (!response.ok) {
+        throw new Error(`BGG responded with ${response.status}`)
+      }
+      return response
+    } catch (error) {
+      if (i === tries - 1) {
+        throw error
+      }
+      console.warn(`BGG failed with ${error}, will try again`)
+      await sleep((i + 1) * RETRY_SLEEP)
+    } finally {
+      clearTimeout(timeout)
+    }
+  }
 
-  clearTimeout(timeout)
-
-  return response
+  throw new Error('Unreachable')
 }
 
 async function getGames(ids: string[], progressCallback: ProgressCallback): Promise<BggGame[]> {
@@ -200,7 +217,7 @@ async function getGames(ids: string[], progressCallback: ProgressCallback): Prom
 
   const idsParam = encodeURIComponent(ids.join(','))
   const apiUrl = `${BASE_URL}/things?id=${idsParam}&stats=1`
-  const response = await fetchWithTimeout(apiUrl, REQUEST_TIMEOUT)
+  const response = await fetchWithTimeout(apiUrl, REQUEST_TIMEOUT, GET_GAMES_BATCH_TRIES)
 
   if (response.status !== 200) {
     throw new Error(`BGG responded with ${response.status}`)
