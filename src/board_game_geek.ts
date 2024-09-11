@@ -4,7 +4,7 @@ import { sleep } from '@/helpers'
 const BASE_URL = 'https://www.boardgamegeek.com/xmlapi2'
 const REQUEST_TIMEOUT = 10e3
 const EXPORT_COLLECTION_QUEUE_TIMEOUT = 120e3
-const EXPORT_COLLECTION_QUEUE_SLEEP = 4e3
+const EXPORT_COLLECTION_QUEUE_SLEEP = 6e3
 const GET_GAMES_BATCH_SIZE = 10
 const GET_GAMES_BATCH_SLEEP = 2e3
 
