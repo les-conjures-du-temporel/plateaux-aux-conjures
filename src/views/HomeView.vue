@@ -18,6 +18,13 @@ const router = useRouter()
     </q-card-section>
   </q-card>
 
+  <q-card class="q-my-sm cursor-pointer" @click="router.push({ name: 'collection' })">
+    <q-card-section>
+      <div class="text-h6"><q-icon name="widgets" /> Ludothèque</div>
+      <div>La liste complète de nos jeux</div>
+    </q-card-section>
+  </q-card>
+
   <q-card class="q-my-sm cursor-pointer" @click="router.push({ name: 'games' })">
     <q-card-section>
       <div class="text-h6"><q-icon name="flare" /> Les jeux du moment</div>
