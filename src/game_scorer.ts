@@ -53,16 +53,12 @@ export class GameScorer {
   private readonly relevancyPercentile: number = 20
 
   constructor(games: Game[]) {
-    console.time('new GameScorer')
-
     this.bggRatingScorer = new BggRatingScorer(games)
     this.favoriteMatchScorer = new FavoriteMatchScorer(games)
     this.playTimeScorer = new PlayTimeScorer()
     this.playersScorer = new PlayersScorer(games)
     this.randomDailyScorer = new RandomDailyScorer(games)
     this.recentlyPlayedScorer = new RecentlyPlayedScorer()
-
-    console.timeEnd('new GameScorer')
   }
 
   score(
@@ -71,7 +67,6 @@ export class GameScorer {
     playersSet: Set<number>,
     playTimeCriteria: Interval | null
   ): ScoredGame[] {
-    console.time('GameScorer.score')
     const bggRatingScoreByGame = this.bggRatingScorer.score(games)
     const favoriteMatchScoreByGame = this.favoriteMatchScorer.score(games, favoriteGames)
     const playTimeScoreByGame = this.playTimeScorer.score(games, playersSet, playTimeCriteria)
@@ -135,7 +130,6 @@ export class GameScorer {
     this.detectRelevant(scoredGames, 'bggRating', (game) => game.bggRatingScore)
     this.detectRelevant(scoredGames, 'favoriteMatch', (game) => game.favoriteMatchScore)
 
-    console.timeEnd('GameScorer.score')
     return scoredGames
   }
 
