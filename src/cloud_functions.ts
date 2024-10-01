@@ -15,10 +15,15 @@ export interface BatchUpdateGamesRequest {
 }
 
 export interface RecordPlayActivityRequest {
-  passCode?: string
+  passCode: string
   gameId: string
   day: string
   location: string
+}
+
+export interface RecordFestivalPlayActivityRequest {
+  gameId: string
+  day: string
 }
 
 export interface SetTranslationsRequest {
@@ -33,6 +38,10 @@ export class CloudFunctions {
   private readonly passCode: Ref<string | null>
   private readonly batchUpdateGamesFn: HttpsCallable<BatchUpdateGamesRequest, Response>
   private readonly recordPlayActivityFn: HttpsCallable<RecordPlayActivityRequest, Response>
+  private readonly recordFestivalPlayActivityFn: HttpsCallable<
+    RecordFestivalPlayActivityRequest,
+    Response
+  >
   private readonly setTranslationsFn: HttpsCallable<SetTranslationsRequest, Response>
 
   constructor(firebaseApp: FirebaseApp, passCode: Ref<string | null>) {
@@ -47,6 +56,10 @@ export class CloudFunctions {
     this.recordPlayActivityFn = httpsCallable<RecordPlayActivityRequest, Response>(
       functions,
       'recordPlayActivity'
+    )
+    this.recordFestivalPlayActivityFn = httpsCallable<RecordFestivalPlayActivityRequest, Response>(
+      functions,
+      'recordFestivalPlayActivity'
     )
     this.setTranslationsFn = httpsCallable<SetTranslationsRequest, Response>(
       functions,
@@ -67,10 +80,17 @@ export class CloudFunctions {
 
   async recordPlayActivity(gameId: string, day: string, location: string): Promise<void> {
     await this.recordPlayActivityFn({
-      passCode: this.getOptionalPassCode(),
+      passCode: this.getPassCode(),
       gameId,
       day,
       location
+    })
+  }
+
+  async recordFestivalPlayActivity(gameId: string, day: string): Promise<void> {
+    await this.recordFestivalPlayActivityFn({
+      gameId,
+      day
     })
   }
 
@@ -85,17 +105,10 @@ export class CloudFunctions {
   }
 
   private getPassCode(): string {
-    const code = this.getOptionalPassCode()
-    if (code) {
-      return code
-    }
-
-    throw new Error('Missing pass code')
-  }
-
-  private getOptionalPassCode(): string | undefined {
     if (this.passCode.value) {
       return normalizeBase32Code(this.passCode.value)
     }
+
+    throw new Error('Missing pass code')
   }
 }

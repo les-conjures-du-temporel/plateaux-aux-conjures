@@ -62,35 +62,51 @@ exports.recordPlayActivity = onCall(
   async (request: CallableRequest<RecordPlayActivityRequest>): Promise<Response> => {
     checkPassCode(request)
 
-    const gameId = request.data.gameId
-    const day = request.data.day
-    const location = request.data.location
+    await doRecordPlayActivity(request.data.gameId, request.data.day, request.data.location)
 
-    if (!gameId.match(/^\d+$/)) {
-      throw new HttpsError('invalid-argument', 'Invalid game id')
-    } else if (!day.match(/^\d{4}-\d\d-\d\d$/)) {
-      throw new HttpsError('invalid-argument', 'Invalid day')
-    } else if (!['club', 'home', 'festival', 'other'].includes(location)) {
-      throw new HttpsError('invalid-argument', 'Invalid location')
+    return {
+      message: 'Saved new play'
+    }
+  }
+)
+
+async function doRecordPlayActivity(gameId: string, day: string, location: string): Promise<void> {
+  if (!gameId.match(/^\d+$/)) {
+    throw new HttpsError('invalid-argument', 'Invalid game id')
+  } else if (!day.match(/^\d{4}-\d\d-\d\d$/)) {
+    throw new HttpsError('invalid-argument', 'Invalid day')
+  } else if (!['club', 'home', 'festival', 'other'].includes(location)) {
+    throw new HttpsError('invalid-argument', 'Invalid location')
+  }
+
+  logger.log(`Record play for ${gameId} at ${day} at ${location}`)
+
+  await firestore.runTransaction(async (transaction) => {
+    const gameRef = firestore.doc(`/games/${gameId}`)
+    const game = (await transaction.get(gameRef)).data()
+    if (!game) {
+      throw new HttpsError('failed-precondition', 'Document does not exist')
     }
 
-    logger.log(`Record play for ${gameId} at ${day} at ${location}`)
+    const lastPlayed = game.lastPlayed || ''
+    const totalPlays = game.totalPlays || 0
+    const newLastPlayed = day > lastPlayed ? day : lastPlayed
 
-    await firestore.runTransaction(async (transaction) => {
-      const gameRef = firestore.doc(`/games/${gameId}`)
-      const game = (await transaction.get(gameRef)).data()
-      if (!game) {
-        throw new HttpsError('failed-precondition', 'Document does not exist')
-      }
+    transaction.update(gameRef, { lastPlayed: newLastPlayed, totalPlays: totalPlays + 1 })
+  })
 
-      const lastPlayed = game.lastPlayed || ''
-      const totalPlays = game.totalPlays || 0
-      const newLastPlayed = day > lastPlayed ? day : lastPlayed
+  await firestore.collection(`/games/${gameId}/playActivities`).add({ day, location })
+}
 
-      transaction.update(gameRef, { lastPlayed: newLastPlayed, totalPlays: totalPlays + 1 })
-    })
+interface RecordFestivalPlayActivityRequest {
+  gameId: string
+  day: string
+}
 
-    await firestore.collection(`/games/${gameId}/playActivities`).add({ day, location })
+exports.recordFestivalPlayActivity = onCall(
+  callOptions,
+  async (request: CallableRequest<RecordFestivalPlayActivityRequest>): Promise<Response> => {
+    await doRecordPlayActivity(request.data.gameId, request.data.day, 'festival')
 
     return {
       message: 'Saved new play'

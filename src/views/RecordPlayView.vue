@@ -125,16 +125,19 @@ async function doSave() {
   }
 
   const gameId = game.value.bgg.id
-  if (db.games.value.every((dbGame) => dbGame.bgg.id !== gameId)) {
-    // Insert new game
-    await cloudFunctions.batchUpdateGames([{ id: gameId, value: game.value }], [])
+  if (isFestivalMode.value) {
+    await cloudFunctions.recordFestivalPlayActivity(gameId, convertCalendarToIso(playDate.value))
+  } else {
+    if (db.games.value.every((dbGame) => dbGame.bgg.id !== gameId)) {
+      // Insert new game
+      await cloudFunctions.batchUpdateGames([{ id: gameId, value: game.value }], [])
+    }
+    await cloudFunctions.recordPlayActivity(
+      gameId,
+      convertCalendarToIso(playDate.value),
+      location.value
+    )
   }
-
-  await cloudFunctions.recordPlayActivity(
-    gameId,
-    convertCalendarToIso(playDate.value),
-    location.value
-  )
 
   notifySuccess('Partie enregistrée')
 
