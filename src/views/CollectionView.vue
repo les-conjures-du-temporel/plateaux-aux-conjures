@@ -2,12 +2,14 @@
 import { inject, type Ref, computed } from 'vue'
 import { Database, type Game } from '@/database'
 import GameItem from '@/components/GameItem.vue'
+import { isGameAvailable } from '@/helpers'
 
 const db = inject<Database>('db')!
+const isFestivalMode = inject<Ref<boolean>>('isFestivalMode')!
 
 const gamesInCollection = computed<Game[]>(() => {
   const games = Array.from(db.games.value)
-  const gamesInCollection = games.filter((game) => game.ownedByClub)
+  const gamesInCollection = games.filter((game) => isGameAvailable(game, isFestivalMode.value))
   gamesInCollection.sort((a, b) => a.name.localeCompare(b.name))
   return gamesInCollection
 })
