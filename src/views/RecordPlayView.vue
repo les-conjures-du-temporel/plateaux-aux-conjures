@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import SearchGame from '@/components/SearchGame.vue'
-import { computed, inject, type Ref, ref } from 'vue'
+import { computed, inject, type Ref, ref, watch } from 'vue'
 import type { CloudFunctions } from '@/cloud_functions'
 import { Database, type Game, type PlayLocation } from '@/database'
 import GameItem from '@/components/GameItem.vue'
@@ -10,6 +10,7 @@ import { notifyError, notifySuccess } from '@/helpers'
 const router = useRouter()
 
 const MAX_PAST_DAYS = 30
+const MAX_PAST_FESTIVAL_DAYS = 1
 
 function dateToCalendarStr(date: Date): string {
   const year = String(date.getFullYear())
@@ -19,20 +20,24 @@ function dateToCalendarStr(date: Date): string {
 }
 
 const db: Database = inject('db')!
+const isFestivalMode = inject<Ref<boolean>>('isFestivalMode')!
 const cloudFunctions: CloudFunctions = inject('cloudFunctions')!
 
 const game: Ref<Game | null> = ref(null)
 
 const today = dateToCalendarStr(new Date())
-const minDate = dateToCalendarStr(new Date(Date.now() - MAX_PAST_DAYS * 24 * 3600e3))
-const minMonth = minDate.slice(0, 7)
+const minDate = computed<string>(() => {
+  const maxPastDays = isFestivalMode.value ? MAX_PAST_FESTIVAL_DAYS : MAX_PAST_DAYS
+  return dateToCalendarStr(new Date(Date.now() - maxPastDays * 24 * 3600e3))
+})
+const minMonth = computed<string>(() => minDate.value.slice(0, 7))
 const maxMonth = today.slice(0, 7)
 const isPickingDate: Ref<boolean> = ref(false)
 const pickingDate: Ref<string | null> = ref(null)
 const playDate: Ref<string> = ref(today)
 
 function isDateValid(date: string): boolean {
-  return date <= today && date >= minDate
+  return date <= today && date >= minDate.value
 }
 
 const humanPlayDate = computed(() => {
@@ -52,25 +57,39 @@ function endDatePick() {
   }
 }
 
-const locationOptions: { label: string; value: PlayLocation }[] = [
-  {
-    label: 'Dans les locaux du club',
-    value: 'club'
-  },
-  {
+const locationOptions = computed<{ label: string; value: PlayLocation }[]>(() => {
+  let festivalLocation = {
     label: 'Dans un festival avec les animateurs du club',
-    value: 'festival'
-  },
-  {
-    label: 'Autre part avec un jeu emprunté au club',
-    value: 'home'
-  },
-  {
-    label: 'Autre cas',
-    value: 'other'
+    value: 'festival' as PlayLocation
   }
-]
+
+  return isFestivalMode.value
+    ? [festivalLocation]
+    : [
+        {
+          label: 'Dans les locaux du club',
+          value: 'club'
+        },
+        festivalLocation,
+        {
+          label: 'Autre part avec un jeu emprunté au club',
+          value: 'home'
+        },
+        {
+          label: 'Autre cas',
+          value: 'other'
+        }
+      ]
+})
+
 const location: Ref<PlayLocation> = ref('club')
+watch(
+  isFestivalMode,
+  () => {
+    location.value = isFestivalMode.value ? 'festival' : 'club'
+  },
+  { immediate: true }
+)
 
 const passCode: Ref<string | null> = inject('passCode')!
 const isChangingPassCode: Ref<boolean> = ref(!passCode.value)
@@ -146,7 +165,11 @@ async function doSave() {
       @click="game = null"
     />
   </div>
-  <search-game v-if="!game" @input="(selectedGame) => (game = selectedGame)" />
+  <search-game
+    v-if="!game"
+    @input="(selectedGame) => (game = selectedGame)"
+    :only-festival-games="isFestivalMode"
+  />
   <game-item v-if="game" :game="game" show-total-plays></game-item>
 
   <div class="text-h6 q-my-sm">
@@ -194,29 +217,31 @@ async function doSave() {
   <div class="text-h6">Où ?</div>
   <q-option-group v-model="location" :options="locationOptions" type="radio" />
 
-  <div class="text-h6 q-my-sm">
-    Clé d'accès
-    <q-btn
-      v-if="!isChangingPassCode"
-      label="Changer"
-      size="sm"
-      unelevated
-      no-caps
-      icon="edit"
-      color="secondary"
-      class="q-mx-sm"
-      @click="isChangingPassCode = true"
-    />
-  </div>
-  <div v-if="isChangingPassCode">
-    <q-input v-model="passCode" label="Saisis la clé de 8 caractères" outlined mask="XXXX XXXX" />
-  </div>
-  <div v-else>
-    <code>{{ passCode }}</code>
-  </div>
-  <div class="text-caption">
-    Ce code est affiché dans nos locaux et on l'utilise pour s'assurer que seuls nos membres peuvent
-    enregistrer leurs parties
+  <div v-if="!isFestivalMode">
+    <div class="text-h6 q-my-sm">
+      Clé d'accès
+      <q-btn
+        v-if="!isChangingPassCode"
+        label="Changer"
+        size="sm"
+        unelevated
+        no-caps
+        icon="edit"
+        color="secondary"
+        class="q-mx-sm"
+        @click="isChangingPassCode = true"
+      />
+    </div>
+    <div v-if="isChangingPassCode">
+      <q-input v-model="passCode" label="Saisis la clé de 8 caractères" outlined mask="XXXX XXXX" />
+    </div>
+    <div v-else>
+      <code>{{ passCode }}</code>
+    </div>
+    <div class="text-caption">
+      Ce code est affiché dans nos locaux et on l'utilise pour s'assurer que seuls nos membres
+      peuvent enregistrer leurs parties
+    </div>
   </div>
 
   <q-btn
@@ -227,7 +252,7 @@ async function doSave() {
     no-caps
     class="q-my-sm"
     :loading="saving"
-    :disable="game === null || !passCode"
+    :disable="game === null || (!isFestivalMode && !passCode)"
   />
 </template>
 

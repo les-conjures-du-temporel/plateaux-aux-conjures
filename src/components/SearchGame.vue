@@ -5,6 +5,8 @@ import { Database, type Game } from '@/database'
 import GameItem from '@/components/GameItem.vue'
 import { notifyWarn } from '@/helpers'
 
+const props = defineProps<{ onlyFestivalGames?: boolean }>()
+
 const emit = defineEmits<{
   input: [input: Game]
 }>()
@@ -35,32 +37,37 @@ function filterGameSearch(term: string, doneFn: (callbackFn: () => void) => void
   abortController.abort()
   abortController = new AbortController()
 
-  gameSearcher.searchForAutoComplete(term, abortController.signal, (results, searchingBgg) => {
-    doneFn(() => {
-      const newItems: Item[] = []
+  gameSearcher.searchForAutoComplete(
+    term,
+    abortController.signal,
+    Boolean(props.onlyFestivalGames),
+    (results, searchingBgg) => {
+      doneFn(() => {
+        const newItems: Item[] = []
 
-      for (const result of results) {
-        newItems.push({
-          label: result.name,
-          caption: result.yearPublished ? `(${result.yearPublished})` : undefined,
-          value: result.id,
-          badge: result.ownedByClub ? 'jeu du club' : undefined,
-          showSpinner: false
-        })
-      }
+        for (const result of results) {
+          newItems.push({
+            label: result.name,
+            caption: result.yearPublished ? `(${result.yearPublished})` : undefined,
+            value: result.id,
+            badge: result.ownedByClub ? 'jeu du club' : undefined,
+            showSpinner: false
+          })
+        }
 
-      if (searchingBgg) {
-        newItems.push({
-          label: 'Recherche externe en cours',
-          value: '',
-          disable: true,
-          showSpinner: true
-        })
-      }
+        if (searchingBgg) {
+          newItems.push({
+            label: 'Recherche externe en cours',
+            value: '',
+            disable: true,
+            showSpinner: true
+          })
+        }
 
-      items.value = newItems
-    })
-  })
+        items.value = newItems
+      })
+    }
+  )
 }
 
 function abortGameSearch() {
@@ -143,7 +150,7 @@ function choseGame(game: Game): void {
       </q-item>
     </template>
 
-    <template v-slot:after-options>
+    <template v-if="!onlyFestivalGames" v-slot:after-options>
       <q-item class="bg-secondary text-white cursor-pointer" @click.capture="displayFullSearch">
         <q-item-section>
           <q-item-label>Montrer tous les résultats</q-item-label>

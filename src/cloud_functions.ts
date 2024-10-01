@@ -15,7 +15,7 @@ export interface BatchUpdateGamesRequest {
 }
 
 export interface RecordPlayActivityRequest {
-  passCode: string
+  passCode?: string
   gameId: string
   day: string
   location: string
@@ -67,7 +67,7 @@ export class CloudFunctions {
 
   async recordPlayActivity(gameId: string, day: string, location: string): Promise<void> {
     await this.recordPlayActivityFn({
-      passCode: this.getPassCode(),
+      passCode: this.getOptionalPassCode(),
       gameId,
       day,
       location
@@ -85,10 +85,17 @@ export class CloudFunctions {
   }
 
   private getPassCode(): string {
-    if (this.passCode.value) {
-      return normalizeBase32Code(this.passCode.value)
+    const code = this.getOptionalPassCode()
+    if (code) {
+      return code
     }
 
     throw new Error('Missing pass code')
+  }
+
+  private getOptionalPassCode(): string | undefined {
+    if (this.passCode.value) {
+      return normalizeBase32Code(this.passCode.value)
+    }
   }
 }

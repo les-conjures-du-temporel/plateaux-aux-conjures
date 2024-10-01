@@ -40,6 +40,7 @@ export class GameSearcher {
   searchForAutoComplete(
     term: string,
     abortSignal: AbortSignal,
+    onlyFestivalGames: boolean,
     resultsCallback: SearchResultsCallback
   ): void {
     const normalizedTerm = GameSearcher.normalizeText(term)
@@ -50,7 +51,11 @@ export class GameSearcher {
 
     for (const localGame of localGames) {
       const gameId = localGame.game.bgg.id
-      if (localGame.text.includes(normalizedTerm) && !hitIds.has(gameId)) {
+      if (
+        localGame.text.includes(normalizedTerm) &&
+        !hitIds.has(gameId) &&
+        (!onlyFestivalGames || localGame.game.availableAtFestival)
+      ) {
         hits.push({
           name: localGame.game.name,
           yearPublished: localGame.game.bgg.yearPublished,
@@ -67,7 +72,7 @@ export class GameSearcher {
       }
     }
 
-    if (hits.length === this.maxResults) {
+    if (hits.length === this.maxResults || onlyFestivalGames) {
       // Don't do search on BGG
       resultsCallback(hits, false)
       return
