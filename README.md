@@ -27,14 +27,14 @@ VITE_FIREBASE_APPCHECK_DEBUG_TOKEN=<ask me for it>
 npm run dev
 ```
 
-### Compile and Minify for Production
+### Lint
 
 ```sh
-npm run build
+npm run type-check
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+### Deploy functions
 
 ```sh
-npm run lint
+cd functions && npm run deploy
 ```
