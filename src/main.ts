@@ -50,12 +50,12 @@ const db = new Database(firebaseApp)
 
 const passCode: Ref<string | null> = ref(localStorage.getItem('passCode'))
 const cloudFunctions = new CloudFunctions(firebaseApp, passCode)
-const festivalMode = ref<boolean>(localStorage.getItem('festivalMode') !== null)
+const isFestivalMode = ref<boolean>(localStorage.getItem('isFestivalMode') !== null)
 
 app.provide('db', db)
 app.provide('cloudFunctions', cloudFunctions)
 app.provide('passCode', passCode)
-app.provide('festivalMode', festivalMode)
+app.provide('isFestivalMode', isFestivalMode)
 
 app.mount('#app')
 
@@ -67,18 +67,18 @@ watch(passCode, (passCode) => {
 })
 
 // Store and recover the festival mode from local storage
-watch(festivalMode, (festivalMode) => {
-  if (festivalMode) {
-    localStorage.setItem('festivalMode', 'true')
+watch(isFestivalMode, (isFestivalMode) => {
+  if (isFestivalMode) {
+    localStorage.setItem('isFestivalMode', 'true')
   } else {
-    localStorage.removeItem('festivalMode')
+    localStorage.removeItem('isFestivalMode')
   }
 })
 
 // Try to get the code from the current url, like '/some-page#yada'
 router.beforeEach((to) => {
   if (to.name === 'festival') {
-    festivalMode.value = true
+    isFestivalMode.value = true
   }
 
   const hash = to.hash

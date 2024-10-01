@@ -1,4 +1,5 @@
 import type { Game } from '@/database'
+import { isGameAvailable } from '@/helpers'
 
 /**
  * Score the game based on the similarity with the list of favorite games.
@@ -9,9 +10,9 @@ export class FavoriteMatchScorer {
   private readonly termsByGame: Map<string, Set<string>>
   private readonly weightByTerm: Map<string, number>
 
-  constructor(games: Game[]) {
-    this.termsByGame = FavoriteMatchScorer.getTermsByGame(games)
-    this.weightByTerm = FavoriteMatchScorer.getWeightByTerm(games)
+  constructor(games: Game[], isFestivalMode: boolean) {
+    this.termsByGame = FavoriteMatchScorer.getTermsByGame(games, isFestivalMode)
+    this.weightByTerm = FavoriteMatchScorer.getWeightByTerm(this.termsByGame)
   }
 
   score(games: Game[], favoriteGames: Game[]): Map<string, number> {
@@ -66,8 +67,7 @@ export class FavoriteMatchScorer {
    * A term that appears in all games has value of zero. A term that appears in one single game has
    * value of one.
    */
-  private static getWeightByTerm(games: Game[]): Map<string, number> {
-    const termsByGame = this.getTermsByGame(games)
+  private static getWeightByTerm(termsByGame: Map<string, Set<string>>): Map<string, number> {
     const gamesByTerm: Map<string, number> = new Map()
     for (const terms of termsByGame.values()) {
       for (const term of terms) {
@@ -88,11 +88,11 @@ export class FavoriteMatchScorer {
   /**
    * Generate the set of terms for all games owned by the club
    */
-  private static getTermsByGame(games: Game[]): Map<string, Set<string>> {
+  private static getTermsByGame(games: Game[], isFestivalMode: boolean): Map<string, Set<string>> {
     const termsByGame = new Map()
 
     for (const game of games) {
-      if (game.ownedByClub) {
+      if (isGameAvailable(game, isFestivalMode)) {
         termsByGame.set(game.bgg.id, this.getTermsForGame(game))
       }
     }

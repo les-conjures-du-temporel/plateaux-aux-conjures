@@ -4,7 +4,7 @@ import { inject, type Ref } from 'vue'
 
 const router = useRouter()
 
-const festivalMode = inject<Ref<boolean>>('festivalMode')
+const isFestivalMode = inject<Ref<boolean>>('isFestivalMode')!
 </script>
 
 <template>
@@ -44,7 +44,7 @@ const festivalMode = inject<Ref<boolean>>('festivalMode')
 
   <div class="q-ma-md">
     <q-icon name="festival" />
-    <q-toggle v-model="festivalMode" label="Montrer seulement les jeux du festival" />
+    <q-toggle v-model="isFestivalMode" label="Montrer seulement les jeux du festival" />
   </div>
 </template>
 

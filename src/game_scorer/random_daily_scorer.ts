@@ -1,4 +1,5 @@
 import type { Game } from '@/database'
+import { isGameAvailable } from '@/helpers'
 
 /**
  * Randomly chose a fraction of the game every day to "promote"
@@ -7,12 +8,12 @@ export class RandomDailyScorer {
   static selectProbability: number = 10
   private readonly selectedGameIds: Set<string>
 
-  constructor(games: Game[]) {
+  constructor(games: Game[], isFestivalMode: boolean) {
     const today = new Date().toISOString().slice(0, 10)
 
     this.selectedGameIds = new Set()
     for (const game of games) {
-      if (game.ownedByClub) {
+      if (isGameAvailable(game, isFestivalMode)) {
         const hash = RandomDailyScorer.hash(today + game.bgg.id)
         if (hash % 100 < RandomDailyScorer.selectProbability) {
           this.selectedGameIds.add(game.bgg.id)

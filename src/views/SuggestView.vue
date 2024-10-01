@@ -3,12 +3,13 @@ import { computed, type ComputedRef, inject, type Ref, ref, watch } from 'vue'
 import SearchGame from '@/components/SearchGame.vue'
 import { Database, type Game } from '@/database'
 import GameItem, { type Highlights } from '@/components/GameItem.vue'
-import { pluralS } from '@/helpers'
+import { isGameAvailable, pluralS } from '@/helpers'
 import { GameScorer } from '@/game_scorer'
 
 type Interval = [number, number]
 
 const games: Ref<Game[]> = inject<Database>('db')!.games
+const isFestivalMode = inject<Ref<boolean>>('isFestivalMode')!
 const tab = ref('players')
 
 // Declare possible options
@@ -67,7 +68,7 @@ const criteriaWeight: Ref<Interval[]> = ref([])
 const criteriaFavoriteGames: Ref<Game[]> = ref([])
 
 const gameScorer = computed(() => {
-  return new GameScorer(games.value)
+  return new GameScorer(games.value, isFestivalMode.value)
 })
 
 const highlights: ComputedRef<Highlights> = computed(() => {
@@ -109,7 +110,11 @@ const suggestionResults = computed(() => {
   const favoriteGameIds = new Set(criteriaFavoriteGames.value.map((favorite) => favorite.bgg.id))
   const validGames: Game[] = []
   for (const game of games.value) {
-    if (!game.ownedByClub || favoriteGameIds.has(game.bgg.id)) {
+    if (!isGameAvailable(game, isFestivalMode.value)) {
+      continue
+    }
+
+    if (favoriteGameIds.has(game.bgg.id)) {
       continue
     }
 

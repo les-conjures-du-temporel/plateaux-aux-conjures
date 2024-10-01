@@ -1,4 +1,5 @@
 import type { Game } from '@/database'
+import { isGameAvailable } from '@/helpers'
 
 /**
  * Score games based on their BGG average ratings.
@@ -9,12 +10,12 @@ export class BggRatingScorer {
   private readonly minBayesRating: number
   private readonly maxBayesRating: number
 
-  constructor(games: Game[]) {
+  constructor(games: Game[], isFestivalMode: boolean) {
     let min = Number.POSITIVE_INFINITY
     let max = Number.NEGATIVE_INFINITY
     for (const game of games) {
       const bayesAverageRating = game.bgg.bayesAverageRating
-      if (game.ownedByClub && bayesAverageRating) {
+      if (isGameAvailable(game, isFestivalMode) && bayesAverageRating) {
         min = Math.min(min, bayesAverageRating)
         max = Math.max(max, bayesAverageRating)
       }

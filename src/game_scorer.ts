@@ -52,12 +52,12 @@ export class GameScorer {
   // Mark this amount of the top percentage in each score
   private readonly relevancyPercentile: number = 20
 
-  constructor(games: Game[]) {
-    this.bggRatingScorer = new BggRatingScorer(games)
-    this.favoriteMatchScorer = new FavoriteMatchScorer(games)
+  constructor(games: Game[], isFestivalMode: boolean) {
+    this.bggRatingScorer = new BggRatingScorer(games, isFestivalMode)
+    this.favoriteMatchScorer = new FavoriteMatchScorer(games, isFestivalMode)
     this.playTimeScorer = new PlayTimeScorer()
     this.playersScorer = new PlayersScorer(games)
-    this.randomDailyScorer = new RandomDailyScorer(games)
+    this.randomDailyScorer = new RandomDailyScorer(games, isFestivalMode)
     this.recentlyPlayedScorer = new RecentlyPlayedScorer()
   }
 

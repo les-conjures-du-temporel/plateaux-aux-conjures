@@ -85,3 +85,7 @@ export function notifySuccess(message: string): void {
     message: message
   })
 }
+
+export function isGameAvailable(game: Game, isFestivalMode: boolean): boolean {
+  return isFestivalMode ? game.availableAtFestival : game.ownedByClub
+}
