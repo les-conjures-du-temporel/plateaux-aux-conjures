@@ -44,6 +44,11 @@ const router = createRouter({
       path: '/ludotheque',
       name: 'collection',
       component: CollectionView
+    },
+    {
+      path: '/festival',
+      name: 'festival',
+      component: SuggestView
     }
   ]
 })

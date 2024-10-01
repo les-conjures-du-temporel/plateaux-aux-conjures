@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { inject, type Ref } from 'vue'
 
 const router = useRouter()
+
+const festivalMode = inject<Ref<boolean>>('festivalMode')
 </script>
 
 <template>
@@ -38,6 +41,11 @@ const router = useRouter()
       <div>Dis-nous à quoi tu as joué avec nous</div>
     </q-card-section>
   </q-card>
+
+  <div class="q-ma-md">
+    <q-icon name="festival" />
+    <q-toggle v-model="festivalMode" label="Montrer seulement les jeux du festival" />
+  </div>
 </template>
 
 <style scoped></style>
