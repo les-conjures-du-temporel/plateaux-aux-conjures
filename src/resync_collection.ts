@@ -1,5 +1,5 @@
 import { getGamesInBatches, listGamesInUserCollection } from '@/board_game_geek'
-import { boardGameGeekUser } from '@/config'
+import { boardGameGeekFestivalUser, boardGameGeekUser } from '@/config'
 import type { Database } from '@/database'
 import { buildGameFromBggGame } from '@/helpers'
 import type { CloudFunctions } from '@/cloud_functions'
@@ -21,8 +21,17 @@ export async function resyncCollection(
 
   // Extract data from bgg
   const novelGames = await listGamesInUserCollection(boardGameGeekUser, progressCallback)
+  const novelFestivalGames = await listGamesInUserCollection(
+    boardGameGeekFestivalUser,
+    progressCallback
+  )
   const novelGameById = new Map(novelGames.map((game) => [game.id, game]))
-  const allBggIds = new Set([...staleGames.keys(), ...novelGameById.keys()])
+  const novelFestivalGameById = new Map(novelFestivalGames.map((game) => [game.id, game]))
+  const allBggIds = new Set([
+    ...staleGames.keys(),
+    ...novelGameById.keys(),
+    ...novelFestivalGameById.keys()
+  ])
   const bggGamesList = await getGamesInBatches(Array.from(allBggIds), progressCallback)
   const bggGames = new Map(bggGamesList.map((game) => [game.id, game]))
 
@@ -37,17 +46,21 @@ export async function resyncCollection(
     }
 
     const staleGame = staleGames.get(id)
-    const novelGameName = novelGameById.get(id)?.name
+    const ownedByClub = novelGameById.has(id)
+    const availableAtFestival = novelFestivalGameById.has(id)
+    const name =
+      novelGameById.get(id)?.name || novelFestivalGameById.get(id)?.name || staleGame?.name
     if (!staleGame) {
-      const value = buildGameFromBggGame(bggGame, true, novelGameName)
+      const value = buildGameFromBggGame(bggGame, ownedByClub, availableAtFestival, name)
       gamesToAdd.push({ id, value })
     } else {
       gamesToUpdate.push({
         id,
         updates: {
           bgg: bggGame,
-          ownedByClub: novelGameById.has(id),
-          name: novelGameName || staleGame.name
+          ownedByClub,
+          availableAtFestival,
+          name
         }
       })
     }

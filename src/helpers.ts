@@ -36,11 +36,17 @@ export function normalizeBase32Code(text: string): string {
     .replace(/8/g, 'B')
 }
 
-export function buildGameFromBggGame(bggGame: BggGame, ownedByClub: boolean, name?: string): Game {
+export function buildGameFromBggGame(
+  bggGame: BggGame,
+  ownedByClub: boolean,
+  availableAtFestival: boolean,
+  name?: string
+): Game {
   return {
     name: name || bggGame.primaryName,
     bgg: bggGame,
     ownedByClub,
+    availableAtFestival,
     ownedSince: ownedByClub ? today() : null,
     lastPlayed: null,
     totalPlays: 0

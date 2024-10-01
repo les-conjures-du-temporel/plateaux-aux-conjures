@@ -29,7 +29,11 @@ export interface Game {
   // it may be different because of locality
   name: string
   bgg: BggGame
+  // `true` when this game is part of our library
   ownedByClub: boolean
+  // `true` when this game is part of the games that we'll bring to the next festival.
+  // Note that we may have brought games to the festival that are not our own.
+  availableAtFestival: boolean
   // When this game was first detected in the club's collection.
   ownedSince: Day | null
   lastPlayed: Day | null

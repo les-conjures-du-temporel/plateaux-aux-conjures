@@ -206,7 +206,7 @@ export class GameSearcher {
   private async populateBggGameCache(ids: string[]) {
     const missingGames = await getGamesInBatches(ids, () => {})
     for (const missingGame of missingGames) {
-      this.bggGameCache.set(missingGame.id, buildGameFromBggGame(missingGame, false))
+      this.bggGameCache.set(missingGame.id, buildGameFromBggGame(missingGame, false, false))
     }
   }
 }
